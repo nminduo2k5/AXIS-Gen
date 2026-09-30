@@ -1,0 +1,5 @@
+﻿Model,Method,Valid seeds,Failed seeds,Avg #Req,Mutation score % (mean),Std,Rule coverage %,Invalid LLM values %
+openai_gpt-oss-120b,llm_guided,5,0,40.0,77.6,6.6,93.3,0.2
+openai_gpt-oss-120b,llm_guided_hybrid,5,0,40.0,79.6,6.6,93.3,0.2
+openai_gpt-oss-20b,llm_guided,5,0,29.4,74.1,6.2,90.0,0.2
+openai_gpt-oss-20b,llm_guided_hybrid,5,0,31.2,75.7,6.3,90.0,0.2

@@ -1,0 +1,154 @@
+{
+  "aggregate": {
+    "random": {
+      "n_seeds": 5,
+      "n_seeds_failed": 0,
+      "n_req_mean": 40,
+      "mutation_score_mean": 0.5333333333333333,
+      "mutation_score_std": 0.03802101848953986,
+      "mutation_score_min": 0.49019607843137253,
+      "mutation_score_max": 0.5882352941176471,
+      "rule_coverage_mean": 0.5333333333333333,
+      "rule_coverage_std": 0.06666666666666665,
+      "req_to_fixed_mean": 16,
+      "req_to_fixed_std": 4.774934554525329,
+      "req_to_fixed_reached_in": 5,
+      "permit_mean": 4.6,
+      "deny_mean": 3.4,
+      "na_mean": 32,
+      "killed_mean": 27.2,
+      "total_mutants": 51
+    },
+    "pairwise": {
+      "n_seeds": 5,
+      "n_seeds_failed": 0,
+      "n_req_mean": 30.4,
+      "mutation_score_mean": 0.5686274509803921,
+      "mutation_score_std": 0.05947353289452196,
+      "mutation_score_min": 0.49019607843137253,
+      "mutation_score_max": 0.6666666666666666,
+      "rule_coverage_mean": 0.6,
+      "rule_coverage_std": 0.08164965809277258,
+      "req_to_fixed_mean": 13.2,
+      "req_to_fixed_std": 3.3105890714493698,
+      "req_to_fixed_reached_in": 5,
+      "permit_mean": 3,
+      "deny_mean": 4.2,
+      "na_mean": 23.2,
+      "killed_mean": 29,
+      "total_mutants": 51
+    },
+    "llm_guided": {
+      "n_seeds": 5,
+      "n_seeds_failed": 0,
+      "n_req_mean": 29.4,
+      "mutation_score_mean": 0.7411764705882353,
+      "mutation_score_std": 0.06249951941376167,
+      "mutation_score_min": 0.6470588235294118,
+      "mutation_score_max": 0.8431372549019608,
+      "rule_coverage_mean": 0.9,
+      "rule_coverage_std": 0.08164965809277258,
+      "req_to_fixed_mean": 7.8,
+      "req_to_fixed_std": 1.7204650534085253,
+      "req_to_fixed_reached_in": 5,
+      "permit_mean": 12.8,
+      "deny_mean": 5,
+      "na_mean": 11.6,
+      "killed_mean": 37.8,
+      "total_mutants": 51
+    },
+    "llm_guided_hybrid": {
+      "n_seeds": 5,
+      "n_seeds_failed": 0,
+      "n_req_mean": 31.2,
+      "mutation_score_mean": 0.7568627450980392,
+      "mutation_score_std": 0.06274509803921571,
+      "mutation_score_min": 0.6666666666666666,
+      "mutation_score_max": 0.8627450980392157,
+      "rule_coverage_mean": 0.9,
+      "rule_coverage_std": 0.08164965809277258,
+      "req_to_fixed_mean": 7.8,
+      "req_to_fixed_std": 1.1661903789690602,
+      "req_to_fixed_reached_in": 5,
+      "permit_mean": 12.8,
+      "deny_mean": 7,
+      "na_mean": 11.4,
+      "killed_mean": 38.6,
+      "total_mutants": 51
+    }
+  },
+  "survivor_analysis": {
+    "budget": 300,
+    "killed": 49,
+    "total": 51,
+    "survivors": [
+      {
+        "id": "RCM_permit-overrides",
+        "op": "RCM",
+        "desc": "combining algorithm deny-overrides -> permit-overrides"
+      },
+      {
+        "id": "RCM_first-applicable",
+        "op": "RCM",
+        "desc": "combining algorithm deny-overrides -> first-applicable"
+      }
+    ]
+  },
+  "llm_diagnostics": [
+    {
+      "backend": "GroqLLMClient",
+      "seed": 1,
+      "requested": 40,
+      "returned": 25,
+      "used": 25,
+      "invalid_values": 0,
+      "total_values": 225,
+      "failed": false,
+      "attempts": 1
+    },
+    {
+      "backend": "GroqLLMClient",
+      "seed": 2,
+      "requested": 40,
+      "returned": 36,
+      "used": 36,
+      "invalid_values": 2,
+      "total_values": 324,
+      "failed": false,
+      "attempts": 1
+    },
+    {
+      "backend": "GroqLLMClient",
+      "seed": 3,
+      "requested": 40,
+      "returned": 39,
+      "used": 39,
+      "invalid_values": 0,
+      "total_values": 351,
+      "failed": false,
+      "attempts": 1
+    },
+    {
+      "backend": "GroqLLMClient",
+      "seed": 4,
+      "requested": 40,
+      "returned": 13,
+      "used": 13,
+      "invalid_values": 0,
+      "total_values": 117,
+      "failed": false,
+      "attempts": 1
+    },
+    {
+      "backend": "GroqLLMClient",
+      "seed": 5,
+      "requested": 40,
+      "returned": 34,
+      "used": 34,
+      "invalid_values": 0,
+      "total_values": 306,
+      "failed": false,
+      "attempts": 1
+    }
+  ]
+}

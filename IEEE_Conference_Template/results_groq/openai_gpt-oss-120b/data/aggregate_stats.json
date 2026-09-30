@@ -1,0 +1,154 @@
+{
+  "aggregate": {
+    "random": {
+      "n_seeds": 5,
+      "n_seeds_failed": 0,
+      "n_req_mean": 40,
+      "mutation_score_mean": 0.5333333333333333,
+      "mutation_score_std": 0.03802101848953986,
+      "mutation_score_min": 0.49019607843137253,
+      "mutation_score_max": 0.5882352941176471,
+      "rule_coverage_mean": 0.5333333333333333,
+      "rule_coverage_std": 0.06666666666666665,
+      "req_to_fixed_mean": 16,
+      "req_to_fixed_std": 4.774934554525329,
+      "req_to_fixed_reached_in": 5,
+      "permit_mean": 4.6,
+      "deny_mean": 3.4,
+      "na_mean": 32,
+      "killed_mean": 27.2,
+      "total_mutants": 51
+    },
+    "pairwise": {
+      "n_seeds": 5,
+      "n_seeds_failed": 0,
+      "n_req_mean": 30.4,
+      "mutation_score_mean": 0.5686274509803921,
+      "mutation_score_std": 0.05947353289452196,
+      "mutation_score_min": 0.49019607843137253,
+      "mutation_score_max": 0.6666666666666666,
+      "rule_coverage_mean": 0.6,
+      "rule_coverage_std": 0.08164965809277258,
+      "req_to_fixed_mean": 13.2,
+      "req_to_fixed_std": 3.3105890714493698,
+      "req_to_fixed_reached_in": 5,
+      "permit_mean": 3,
+      "deny_mean": 4.2,
+      "na_mean": 23.2,
+      "killed_mean": 29,
+      "total_mutants": 51
+    },
+    "llm_guided": {
+      "n_seeds": 5,
+      "n_seeds_failed": 0,
+      "n_req_mean": 40,
+      "mutation_score_mean": 0.7764705882352941,
+      "mutation_score_std": 0.06631974323642258,
+      "mutation_score_min": 0.6862745098039216,
+      "mutation_score_max": 0.8431372549019608,
+      "rule_coverage_mean": 0.9333333333333333,
+      "rule_coverage_std": 0.08164965809277258,
+      "req_to_fixed_mean": 7.2,
+      "req_to_fixed_std": 2.3151673805580453,
+      "req_to_fixed_reached_in": 5,
+      "permit_mean": 20.6,
+      "deny_mean": 5.8,
+      "na_mean": 13.6,
+      "killed_mean": 39.6,
+      "total_mutants": 51
+    },
+    "llm_guided_hybrid": {
+      "n_seeds": 5,
+      "n_seeds_failed": 0,
+      "n_req_mean": 40,
+      "mutation_score_mean": 0.7960784313725491,
+      "mutation_score_std": 0.0663197432364226,
+      "mutation_score_min": 0.7058823529411765,
+      "mutation_score_max": 0.8627450980392157,
+      "rule_coverage_mean": 0.9333333333333333,
+      "rule_coverage_std": 0.08164965809277258,
+      "req_to_fixed_mean": 8.2,
+      "req_to_fixed_std": 1.469693845669907,
+      "req_to_fixed_reached_in": 5,
+      "permit_mean": 19.4,
+      "deny_mean": 7.6,
+      "na_mean": 13,
+      "killed_mean": 40.6,
+      "total_mutants": 51
+    }
+  },
+  "survivor_analysis": {
+    "budget": 300,
+    "killed": 49,
+    "total": 51,
+    "survivors": [
+      {
+        "id": "RCM_permit-overrides",
+        "op": "RCM",
+        "desc": "combining algorithm deny-overrides -> permit-overrides"
+      },
+      {
+        "id": "RCM_first-applicable",
+        "op": "RCM",
+        "desc": "combining algorithm deny-overrides -> first-applicable"
+      }
+    ]
+  },
+  "llm_diagnostics": [
+    {
+      "backend": "GroqLLMClient",
+      "seed": 1,
+      "requested": 40,
+      "returned": 48,
+      "used": 40,
+      "invalid_values": 0,
+      "total_values": 360,
+      "failed": false,
+      "attempts": 1
+    },
+    {
+      "backend": "GroqLLMClient",
+      "seed": 2,
+      "requested": 40,
+      "returned": 46,
+      "used": 40,
+      "invalid_values": 2,
+      "total_values": 360,
+      "failed": false,
+      "attempts": 1
+    },
+    {
+      "backend": "GroqLLMClient",
+      "seed": 3,
+      "requested": 40,
+      "returned": 51,
+      "used": 40,
+      "invalid_values": 2,
+      "total_values": 360,
+      "failed": false,
+      "attempts": 1
+    },
+    {
+      "backend": "GroqLLMClient",
+      "seed": 4,
+      "requested": 40,
+      "returned": 49,
+      "used": 40,
+      "invalid_values": 0,
+      "total_values": 360,
+      "failed": false,
+      "attempts": 1
+    },
+    {
+      "backend": "GroqLLMClient",
+      "seed": 5,
+      "requested": 40,
+      "returned": 53,
+      "used": 40,
+      "invalid_values": 0,
+      "total_values": 360,
+      "failed": false,
+      "attempts": 1
+    }
+  ]
+}

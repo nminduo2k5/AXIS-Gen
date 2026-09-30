@@ -1,0 +1,146 @@
+2026-09-30 19:00:55  INFO     Log file: G:\AI-Native-TestGen-ICAI-FAI-2026_Full-Experiment\results\groq\openai_gpt-oss-20b\logs\experiment_20260930_190055.log
+2026-09-30 19:00:55  INFO     LLM backend: groq
+2026-09-30 19:00:55  INFO     ======================================================================
+2026-09-30 19:00:55  INFO       AI-Native Test Generation — Full Experiment Pipeline
+2026-09-30 19:00:55  INFO       ICAI-FAI 2026 — CMC University, Hanoi
+2026-09-30 19:00:55  INFO     ======================================================================
+2026-09-30 19:00:55  INFO     [setup] Output directories created under ./results/
+2026-09-30 19:00:55  INFO     [policy] ICS-WaterTreatment-ABAC-v1: 6 rules, combining=deny-overrides
+2026-09-30 19:00:55  INFO     [mutants] 51 mutants across ['CEM', 'CPM', 'CVM', 'LOM', 'MRD', 'RCM', 'TRM']
+2026-09-30 19:00:55  INFO     
+[experiment] Running main experiment ...
+2026-09-30 19:00:55  INFO     [llm] Backend: Groq  model=openai/gpt-oss-20b
+2026-09-30 19:01:01  INFO     [GroqLLMClient] Raw response (first 300 chars): [{"subject.role":"operator","subject.clearance_level":2,"subject.location":"onsite","resource.type":"hmi","resource.zone":"level2_supervisory","resource.criticality":"medium","action.id":"read","environment.safety_state":"normal","environment.plant_mode":"production","comment":"R1 activation"},{"sub
+2026-09-30 19:01:01  INFO     [GroqLLMClient] NOTE — model returned 33 < requested 40 requests.
+2026-09-30 19:01:01  INFO     [GroqLLMClient] Parsed request count: 33
+2026-09-30 19:01:01  INFO     [GroqLLMClient] domain-repair: 0/297 values invalid (0.0%)
+2026-09-30 19:01:01  INFO     [llm_guided] seed=1 generated 33 requests
+2026-09-30 19:01:07  INFO     [GroqLLMClient] Raw response (first 300 chars): [{"subject.role":"operator","subject.clearance_level":2,"subject.location":"onsite","resource.type":"hmi","resource.zone":"level2_supervisory","resource.criticality":"medium","action.id":"read","environment.safety_state":"normal","environment.plant_mode":"production","comment":"R1_operator_read acti
+2026-09-30 19:01:07  INFO     [GroqLLMClient] Truncating 40 -> 38 requests to keep the equal budget.
+2026-09-30 19:01:07  INFO     [GroqLLMClient] Parsed request count: 38
+2026-09-30 19:01:07  INFO     [GroqLLMClient] domain-repair: 0/342 values invalid (0.0%)
+2026-09-30 19:01:07  INFO     [llm_guided] seed=1 generated 38 requests
+2026-09-30 19:01:07  INFO       [ 1/20] seed=1 method=random               mut_score=54.9%  rule_cov=50.0%  (12.1s)
+2026-09-30 19:01:07  INFO       [ 2/20] seed=1 method=pairwise             mut_score=49.0%  rule_cov=50.0%  (12.1s)
+2026-09-30 19:01:07  INFO       [ 3/20] seed=1 method=llm_guided           mut_score=84.3%  rule_cov=100.0%  (12.2s)
+2026-09-30 19:01:07  INFO       [ 4/20] seed=1 method=llm_guided_hybrid    mut_score=70.6%  rule_cov=83.3%  (12.2s)
+2026-09-30 19:01:32  INFO     [GroqLLMClient] Raw response (first 300 chars): [
+  {"subject.role":"operator","subject.clearance_level":2,"subject.location":"onsite","resource.type":"hmi","resource.zone":"level1_control","resource.criticality":"low","action.id":"read","environment.safety_state":"normal","environment.plant_mode":"production","comment":"R1 activation"},
+  {"subj
+2026-09-30 19:01:32  INFO     [GroqLLMClient] Truncating 58 -> 40 requests to keep the equal budget.
+2026-09-30 19:01:32  INFO     [GroqLLMClient] Parsed request count: 40
+2026-09-30 19:01:32  INFO     [GroqLLMClient] domain-repair: 0/360 values invalid (0.0%)
+2026-09-30 19:01:32  INFO     [llm_guided] seed=2 generated 40 requests
+2026-09-30 19:02:09  INFO     [GroqLLMClient] Raw response (first 300 chars): []
+2026-09-30 19:02:09  INFO     [GroqLLMClient] Empty/invalid answer for seed=2 — retrying (2/3).
+2026-09-30 19:02:17  INFO     [GroqLLMClient] Raw response (first 300 chars): [{"subject.role":"operator","subject.clearance_level":2,"subject.location":"onsite","resource.type":"hmi","resource.zone":"level1_control","resource.criticality":"medium","action.id":"read","environment.safety_state":"normal","environment.plant_mode":"production","comment":"R1_operator_read activati
+2026-09-30 19:02:17  INFO     [GroqLLMClient] Parsed request count: 38
+2026-09-30 19:02:17  INFO     [GroqLLMClient] domain-repair: 0/342 values invalid (0.0%)
+2026-09-30 19:02:17  INFO     [llm_guided] seed=2 generated 38 requests
+2026-09-30 19:02:17  INFO       [ 5/20] seed=2 method=random               mut_score=54.9%  rule_cov=50.0%  (82.5s)
+2026-09-30 19:02:18  INFO       [ 6/20] seed=2 method=pairwise             mut_score=66.7%  rule_cov=66.7%  (82.5s)
+2026-09-30 19:02:18  INFO       [ 7/20] seed=2 method=llm_guided           mut_score=86.3%  rule_cov=100.0%  (82.5s)
+2026-09-30 19:02:18  INFO       [ 8/20] seed=2 method=llm_guided_hybrid    mut_score=78.4%  rule_cov=100.0%  (82.6s)
+2026-09-30 19:02:45  INFO     [GroqLLMClient] Raw response (first 300 chars): [{"subject.role":"operator","subject.clearance_level":2,"subject.location":"onsite","resource.type":"hmi","resource.zone":"level2_supervisory","resource.criticality":"medium","action.id":"read","environment.safety_state":"normal","environment.plant_mode":"production","comment":"R1 activation"},{"sub
+2026-09-30 19:02:45  INFO     [GroqLLMClient] NOTE — model returned 38 < requested 40 requests.
+2026-09-30 19:02:45  INFO     [GroqLLMClient] Parsed request count: 38
+2026-09-30 19:02:45  INFO     [GroqLLMClient] domain-repair: 0/342 values invalid (0.0%)
+2026-09-30 19:02:45  INFO     [llm_guided] seed=3 generated 38 requests
+2026-09-30 19:03:04  INFO     [GroqLLMClient] Raw response (first 300 chars): [{"subject.role":"operator","subject.clearance_level":3,"subject.location":"onsite","resource.type":"hmi","resource.zone":"level2_supervisory","resource.criticality":"medium","action.id":"read","environment.safety_state":"normal","environment.plant_mode":"production","comment":"R1 activation"},{"sub
+2026-09-30 19:03:04  INFO     [GroqLLMClient] NOTE — model returned 31 < requested 38 requests.
+2026-09-30 19:03:04  INFO     [GroqLLMClient] Parsed request count: 31
+2026-09-30 19:03:04  INFO     [GroqLLMClient] domain-repair: 3/279 values invalid (1.1%)
+2026-09-30 19:03:04  INFO     [llm_guided] seed=3 generated 31 requests
+2026-09-30 19:03:04  INFO       [ 9/20] seed=3 method=random               mut_score=49.0%  rule_cov=50.0%  (129.2s)
+2026-09-30 19:03:04  INFO       [10/20] seed=3 method=pairwise             mut_score=56.9%  rule_cov=66.7%  (129.2s)
+2026-09-30 19:03:04  INFO       [11/20] seed=3 method=llm_guided           mut_score=54.9%  rule_cov=66.7%  (129.3s)
+2026-09-30 19:03:04  INFO       [12/20] seed=3 method=llm_guided_hybrid    mut_score=66.7%  rule_cov=83.3%  (129.3s)
+2026-09-30 19:03:39  INFO     [GroqLLMClient] Raw response (first 300 chars): [{"subject.role":"operator","subject.clearance_level":2,"subject.location":"onsite","resource.type":"hmi","resource.zone":"level2_supervisory","resource.criticality":"medium","action.id":"read","environment.safety_state":"normal","environment.plant_mode":"production","comment":"R1_operator_read acti
+2026-09-30 19:03:39  INFO     [GroqLLMClient] NOTE — model returned 36 < requested 40 requests.
+2026-09-30 19:03:39  INFO     [GroqLLMClient] Parsed request count: 36
+2026-09-30 19:03:39  INFO     [GroqLLMClient] domain-repair: 0/324 values invalid (0.0%)
+2026-09-30 19:03:40  INFO     [llm_guided] seed=4 generated 36 requests
+2026-09-30 19:03:59  INFO     [GroqLLMClient] Raw response (first 300 chars): [{"subject.role":"operator","subject.clearance_level":2,"subject.location":"onsite","resource.type":"hmi","resource.zone":"level2_supervisory","resource.criticality":"medium","action.id":"read","environment.safety_state":"normal","environment.plant_mode":"production","comment":"R1 operator read, nor
+2026-09-30 19:03:59  INFO     [GroqLLMClient] Truncating 44 -> 38 requests to keep the equal budget.
+2026-09-30 19:03:59  INFO     [GroqLLMClient] Parsed request count: 38
+2026-09-30 19:03:59  INFO     [GroqLLMClient] domain-repair: 0/342 values invalid (0.0%)
+2026-09-30 19:03:59  INFO     [llm_guided] seed=4 generated 38 requests
+2026-09-30 19:03:59  INFO       [13/20] seed=4 method=random               mut_score=58.8%  rule_cov=66.7%  (183.9s)
+2026-09-30 19:03:59  INFO       [14/20] seed=4 method=pairwise             mut_score=52.9%  rule_cov=50.0%  (183.9s)
+2026-09-30 19:03:59  INFO       [15/20] seed=4 method=llm_guided           mut_score=80.4%  rule_cov=100.0%  (184.0s)
+2026-09-30 19:03:59  INFO       [16/20] seed=4 method=llm_guided_hybrid    mut_score=84.3%  rule_cov=100.0%  (184.0s)
+2026-09-30 19:04:28  INFO     [GroqLLMClient] Raw response (first 300 chars): [{"subject.role":"operator","subject.clearance_level":2,"subject.location":"onsite","resource.type":"hmi","resource.zone":"level2_supervisory","resource.criticality":"medium","action.id":"read","environment.safety_state":"normal","environment.plant_mode":"production","comment":"R1 activation"},{"sub
+2026-09-30 19:04:28  INFO     [GroqLLMClient] Truncating 44 -> 40 requests to keep the equal budget.
+2026-09-30 19:04:28  INFO     [GroqLLMClient] Parsed request count: 40
+2026-09-30 19:04:28  INFO     [GroqLLMClient] domain-repair: 0/360 values invalid (0.0%)
+2026-09-30 19:04:28  INFO     [llm_guided] seed=5 generated 40 requests
+2026-09-30 19:04:47  INFO     [GroqLLMClient] Raw response (first 300 chars): []
+2026-09-30 19:04:47  INFO     [GroqLLMClient] Empty/invalid answer for seed=5 — retrying (2/3).
+2026-09-30 19:04:54  INFO     [GroqLLMClient] Raw response (first 300 chars): []
+2026-09-30 19:04:54  INFO     [GroqLLMClient] Empty/invalid answer for seed=5 — retrying (3/3).
+2026-09-30 19:05:03  INFO     [GroqLLMClient] Raw response (first 300 chars): [{"subject.role":"operator","subject.clearance_level":2,"subject.location":"onsite","resource.type":"hmi","resource.zone":"level2_supervisory","resource.criticality":"medium","action.id":"read","environment.safety_state":"normal","environment.plant_mode":"production","comment":"R1_operator_read acti
+2026-09-30 19:05:03  INFO     [GroqLLMClient] NOTE — model returned 36 < requested 38 requests.
+2026-09-30 19:05:03  INFO     [GroqLLMClient] Parsed request count: 36
+2026-09-30 19:05:03  INFO     [GroqLLMClient] domain-repair: 0/324 values invalid (0.0%)
+2026-09-30 19:05:03  INFO     [llm_guided] seed=5 generated 36 requests
+2026-09-30 19:05:03  INFO       [17/20] seed=5 method=random               mut_score=49.0%  rule_cov=50.0%  (247.8s)
+2026-09-30 19:05:03  INFO       [18/20] seed=5 method=pairwise             mut_score=58.8%  rule_cov=66.7%  (247.9s)
+2026-09-30 19:05:03  INFO       [19/20] seed=5 method=llm_guided           mut_score=84.3%  rule_cov=100.0%  (247.9s)
+2026-09-30 19:05:03  INFO       [20/20] seed=5 method=llm_guided_hybrid    mut_score=78.4%  rule_cov=100.0%  (247.9s)
+2026-09-30 19:05:03  INFO     
+[experiment] Analysing survivors at large budget ...
+2026-09-30 19:05:03  INFO     [HeuristicSurrogateLLMClient] Parsed request count: 300
+2026-09-30 19:05:03  INFO     [llm_guided] seed=42 generated 300 requests
+2026-09-30 19:05:03  INFO     
+[survivors] budget=300: killed=49, survivors=2
+2026-09-30 19:05:03  INFO       SURVIVOR RCM_permit-overrides  [RCM]  combining algorithm deny-overrides -> permit-overrides
+2026-09-30 19:05:03  INFO       SURVIVOR RCM_first-applicable  [RCM]  combining algorithm deny-overrides -> first-applicable
+2026-09-30 19:05:03  INFO     
+[experiment] Computing aggregate statistics ...
+2026-09-30 19:05:03  INFO     
+[saving] JSON files ...
+2026-09-30 19:05:03  INFO     [json] raw_results.json + aggregate_stats.json saved
+2026-09-30 19:05:03  INFO     [saving] CSV tables ...
+2026-09-30 19:05:03  INFO     [csv] TableI–IV saved
+2026-09-30 19:05:03  INFO     [saving] Excel workbook ...
+2026-09-30 19:05:03  INFO     [excel] experiment_results.xlsx saved (6 sheets)
+2026-09-30 19:05:03  INFO     [saving] Figures ...
+2026-09-30 19:05:04  INFO     [fig] fig1_mutation_score.png saved
+2026-09-30 19:05:04  INFO     [fig] fig2_rule_coverage.png saved
+2026-09-30 19:05:05  INFO     [fig] fig3_efficiency.png saved
+2026-09-30 19:05:05  INFO     [fig] fig4_decision_dist.png saved
+2026-09-30 19:05:06  INFO     [fig] fig5_operator_heatmap.png saved
+2026-09-30 19:05:06  INFO     [saving] XACML XML artifacts ...
+2026-09-30 19:05:06  INFO     [HeuristicSurrogateLLMClient] Parsed request count: 6
+2026-09-30 19:05:06  INFO     [llm_guided] seed=1 generated 6 requests
+2026-09-30 19:05:06  INFO     [xacml] policy.xml + 8 sample request XML files saved
+2026-09-30 19:05:06  INFO     [saving] Word report ...
+2026-09-30 19:05:07  INFO     [word] ERROR: node:internal/modules/cjs/loader:1459
+  throw err;
+  ^
+
+Error: Cannot find module 'docx'
+Require stack:
+- C:\Users\HP\AppData\Local\Temp\axisgen_report.js
+    at Module._resolveFilename (node:internal/modules/cjs/loader:1456:15)
+    at defaultResolveImpl (node:internal/modules/cjs/loader:1066:19)
+    at resolveForCJSWithHooks (node:internal/modules/cjs/loader:1071:22)
+    at Module._load (node:internal/modules/cjs/loader:1242:25)
+    at wrapModuleLoad (node:internal/modules/cjs/loader:255:19)
+2026-09-30 19:05:07  INFO     
+================================================================================
+2026-09-30 19:05:07  INFO       AI-NATIVE TEST GENERATION — EXPERIMENTAL RESULTS — FINAL SUMMARY
+2026-09-30 19:05:07  INFO     ================================================================================
+2026-09-30 19:05:07  INFO     Method                     #Req   Mut.Score   RuleCov  Req->20kill
+2026-09-30 19:05:07  INFO     -----------------------------------------------------------------
+2026-09-30 19:05:07  INFO     Random                     40.0     53.3% ±3.8    53.3%±6.7         16.0
+2026-09-30 19:05:07  INFO     Pairwise (2-way)           30.4     56.9% ±5.9    60.0%±8.2         13.2
+2026-09-30 19:05:07  INFO     LLM-Guided                 37.4     78.0% ±11.7    93.3%±13.3          5.8
+2026-09-30 19:05:07  INFO     LLM-Guided+Symbolic        38.2     75.7% ±6.3    93.3%±8.2          7.6
+2026-09-30 19:05:07  INFO     ================================================================================
+2026-09-30 19:05:07  INFO     Total mutants: 51  |  Survivors at budget 300: 2 (operators: ['RCM'])
+2026-09-30 19:05:07  INFO     Output files in: G:\AI-Native-TestGen-ICAI-FAI-2026_Full-Experiment\results\groq\openai_gpt-oss-20b/
+2026-09-30 19:05:07  INFO     
+[done] Total runtime: 252.2s
+2026-09-30 19:05:07  INFO     [done] All outputs saved to: G:\AI-Native-TestGen-ICAI-FAI-2026_Full-Experiment\results\groq\openai_gpt-oss-20b/
+2026-09-30 19:05:07  INFO     [done] Log saved to: G:\AI-Native-TestGen-ICAI-FAI-2026_Full-Experiment\results\groq\openai_gpt-oss-20b\logs/

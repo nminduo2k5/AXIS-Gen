@@ -492,58 +492,116 @@ class OpenAILLMClient(LLMClient):
         bad-model errors fail loudly instead of silently scoring 0%.
     """
 
+    # Overridable by OpenAI-compatible providers (see GroqLLMClient).
+    LABEL = "openai"
+    API_KEY_ENV = "OPENAI_API_KEY"
+    ENV_FILE_HINT = ".env.openai"
+    BASE_URL: Optional[str] = None
+    MAX_TOKENS = LLM_MAX_OUTPUT_TOKENS
+
     def __init__(self, model: str = "gpt-4o-mini"):
         self.model = model
         self._client = None
-        self._temperature_supported = True
+        # Optional sampling params some models reject (e.g. temperature on
+        # reasoning models). A rejected one is dropped once and remembered.
+        self._dropped_params: set = set()
+
+    def _extra_params(self) -> Dict[str, object]:
+        """Provider/model specific optional params (overridden by subclasses)."""
+        return {}
 
     def _get_client(self):
         if self._client is None:
             from openai import OpenAI  # lazy import
-            api_key = os.environ.get("OPENAI_API_KEY")
+            api_key = os.environ.get(self.API_KEY_ENV)
             if not api_key:
-                raise RuntimeError("OPENAI_API_KEY is not set. Set it in .env.openai and run again.")
-            self._client = OpenAI(api_key=api_key, max_retries=6, timeout=300.0)
+                raise RuntimeError(f"{self.API_KEY_ENV} is not set. Set it in "
+                                   f"{self.ENV_FILE_HINT} and run again.")
+            self._client = OpenAI(api_key=api_key, base_url=self.BASE_URL,
+                                  max_retries=3, timeout=300.0)
         return self._client
 
     def _create(self, system_prompt: str, user_prompt: str, seed: Optional[int]):
         kwargs = dict(
             model=self.model,
-            max_completion_tokens=LLM_MAX_OUTPUT_TOKENS,
+            max_completion_tokens=self.MAX_TOKENS,
             messages=[
                 {"role": "system", "content": system_prompt},
                 {"role": "user",   "content": user_prompt},
             ],
         )
-        if self._temperature_supported:
-            kwargs["temperature"] = LLM_TEMPERATURE
+        optional = {"temperature": LLM_TEMPERATURE, **self._extra_params()}
         if seed is not None:
-            kwargs["seed"] = int(seed)
+            optional["seed"] = int(seed)
+        kwargs.update({k: v for k, v in optional.items() if k not in self._dropped_params})
         return self._get_client().chat.completions.create(**kwargs)
 
     def generate(self, system_prompt: str, user_prompt: str, seed: Optional[int] = None) -> str:
         import openai
         try:
-            try:
-                resp = self._create(system_prompt, user_prompt, seed)
-            except openai.BadRequestError as e:
-                if self._temperature_supported and "temperature" in str(e).lower():
-                    print(f"[openai] {self.model} rejects custom temperature; retrying without it.")
-                    self._temperature_supported = False
+            while True:
+                try:
                     resp = self._create(system_prompt, user_prompt, seed)
-                else:
-                    raise
+                    break
+                except openai.BadRequestError as e:
+                    # If the error names an optional param we sent, drop it and retry.
+                    msg = str(e).lower()
+                    bad = [p for p in ("temperature", "seed", "reasoning_effort")
+                           if p in msg and p not in self._dropped_params]
+                    if not bad:
+                        raise
+                    print(f"[{self.LABEL}] {self.model} rejects {bad}; retrying without.")
+                    self._dropped_params.update(bad)
         except (openai.AuthenticationError, openai.PermissionDeniedError,
                 openai.NotFoundError, openai.BadRequestError) as e:
-            raise RuntimeError(f"[openai] configuration error: {e}") from e
+            raise RuntimeError(f"[{self.LABEL}] configuration error: {e}") from e
+        except openai.RateLimitError as e:
+            # 429 has two meanings: a transient rate limit (already retried by
+            # the SDK) vs. "insufficient_quota" = no billing credit, which no
+            # retry can fix -> fail loudly instead of scoring every seed 0%.
+            if "insufficient_quota" in str(e) or "no credits" in str(e).lower():
+                raise RuntimeError(f"[{self.LABEL}] out of credits: {e}") from e
+            if "request too large" in str(e).lower():
+                # Per-minute token cap smaller than one answer: never succeeds.
+                raise RuntimeError(f"[{self.LABEL}] request exceeds this model's "
+                                   f"per-minute token limit (cannot be fixed by retrying): {e}") from e
+            print(f"[{self.LABEL}] rate-limited after retries: {str(e)[:500]}")
+            return FALLBACK_EMPTY
         except Exception as e:
-            print(f"[openai] call failed after retries: {str(e)[:200]}")
+            print(f"[{self.LABEL}] call failed after retries: {str(e)[:200]}")
             return FALLBACK_EMPTY
 
         choice = resp.choices[0]
         if choice.finish_reason == "length":
-            print("[openai] WARNING — response truncated (finish_reason=length).")
+            print(f"[{self.LABEL}] WARNING — response truncated (finish_reason=length).")
         return choice.message.content or ""
+
+
+class GroqLLMClient(OpenAILLMClient):
+    """Groq Cloud (https://console.groq.com) via its OpenAI-compatible API.
+
+    Requires `pip install openai` and a `GROQ_API_KEY` environment variable.
+    Reuses all OpenAI-client behaviour (seed, retries, fail-fast on bad
+    key/model, truncation warnings) with a different base URL.
+    Output cap is 8192 tokens: enough for ~40 requests, and small enough to
+    stay under the per-request token limits of Groq's free tier.
+    """
+    LABEL = "groq"
+    API_KEY_ENV = "GROQ_API_KEY"
+    ENV_FILE_HINT = ".env.groq"
+    BASE_URL = "https://api.groq.com/openai/v1"
+    MAX_TOKENS = 8192
+
+    def __init__(self, model: str = "openai/gpt-oss-120b"):
+        super().__init__(model=model)
+
+    def _extra_params(self) -> Dict[str, object]:
+        # gpt-oss models spend output tokens on hidden reasoning; with the
+        # default effort that can exhaust the cap and truncate the JSON.
+        # Low effort keeps the answer complete (fair across seeds).
+        if "gpt-oss" in self.model:
+            return {"reasoning_effort": "low"}
+        return {}
 
 
 class HeuristicSurrogateLLMClient(LLMClient):
@@ -628,7 +686,7 @@ def _satisfying_value(pred: Predicate):
     if pred.op in ("lte", "lt"):
         return pred.value
     if pred.op == "in":
-        return next(iter(pred.value))
+        return sorted(pred.value)[0]
     if pred.op == "not_in":
         opts = [v for v in domain_values(pred.ref) if v not in pred.value]
         return opts[0] if opts else pred.value
@@ -650,7 +708,7 @@ def _violating_value(pred: Predicate, rng: random.Random):
     elif pred.op == "in":
         opts = [v for v in domain if v not in pred.value] or [domain[0]]
     elif pred.op == "not_in":
-        opts = [v for v in pred.value]
+        opts = sorted(pred.value)
     else:
         opts = domain
     return rng.choice(opts) if opts else rng.choice(domain)
@@ -776,6 +834,11 @@ def _extract_json(text: str) -> Optional[object]:
     if not text:
         return None
 
+    # Reasoning models (Qwen3, DeepSeek-R1...) may inline <think>...</think>;
+    # drop it so brackets inside the reasoning are not mistaken for the answer.
+    text = re.sub(r"<think>.*?</think>", "", text, flags=re.DOTALL | re.IGNORECASE)
+    text = re.sub(r"^.*?</think>", "", text, flags=re.DOTALL | re.IGNORECASE)
+
     candidates: List[str] = [text.strip()]
 
     fenced = re.search(r"```(?:json)?\s*(.*?)\s*```", text, flags=re.DOTALL | re.IGNORECASE)
@@ -857,38 +920,51 @@ def llm_guided_generator(policy: Policy, n: int, seed: int, client: LLMClient = 
     if not is_real:
         client._policy, client._n, client._seed = policy, n, seed  # type: ignore[attr-defined]
 
-    raw = client.generate(system_prompt, user_prompt, seed=seed)
-
     diag = {"backend": backend, "seed": seed, "requested": n, "returned": 0,
-            "used": 0, "invalid_values": 0, "total_values": 0, "failed": False}
+            "used": 0, "invalid_values": 0, "total_values": 0, "failed": False,
+            "attempts": 0}
 
-    if is_real:
-        print(f"[{backend}] Raw response (first 300 chars): {raw[:300]}")
-
-    # graceful-failure sentinel -> log FAILED, skip seed
-    if is_real and raw.strip() == "[]":
-        print(f"[{backend}] FAILED — LLM returned empty result for seed={seed}. "
-              "This seed is flagged failed and excluded from LLM aggregates.")
-        diag["failed"] = True
+    # A real LLM occasionally answers "[]" / prose / broken JSON even though
+    # the same prompt works on the next try. Retry a couple of times (new
+    # sampling seed) before declaring the seed failed, so a one-off glitch
+    # does not turn into a 0% data point.
+    max_attempts = 3 if is_real else 1
+    valid: List[Dict[str, object]] = []
+    for attempt in range(max_attempts):
+        diag["attempts"] = attempt + 1
+        call_seed = seed if attempt == 0 else seed + 1000 * attempt
+        raw = client.generate(system_prompt, user_prompt, seed=call_seed)
         if is_real:
-            LLM_DIAGNOSTICS.append(diag)
+            print(f"[{backend}] Raw response (first 300 chars): {raw[:300]}")
+
+        parsed = _extract_json(raw)
+        if parsed is None:
+            print(f"[{backend}] WARNING — Could not extract valid JSON. Raw: {raw[:200]}")
+            parsed = []
+        elif isinstance(parsed, dict):
+            parsed = [parsed]
+        elif not isinstance(parsed, list):
+            print(f"[{backend}] WARNING — Parsed JSON was not a list/object "
+                  f"(got {type(parsed).__name__}). Raw: {raw[:200]}")
+            parsed = []
+
+        valid = [item for item in parsed if isinstance(item, dict)]
+        if len(valid) != len(parsed):
+            print(f"[{backend}] WARNING — dropped {len(parsed) - len(valid)} "
+                  f"non-object entries from parsed response.")
+        if valid:
+            break
+        if attempt + 1 < max_attempts:
+            print(f"[{backend}] Empty/invalid answer for seed={seed} — retrying "
+                  f"({attempt + 2}/{max_attempts}).")
+
+    if is_real and not valid:
+        print(f"[{backend}] FAILED — no usable output for seed={seed} after "
+              f"{max_attempts} attempts. This seed is flagged failed and excluded "
+              "from LLM aggregates.")
+        diag["failed"] = True
+        LLM_DIAGNOSTICS.append(diag)
         return []
-
-    parsed = _extract_json(raw)
-    if parsed is None:
-        print(f"[{backend}] WARNING — Could not extract valid JSON. Raw: {raw[:200]}")
-        parsed = []
-    elif isinstance(parsed, dict):
-        parsed = [parsed]
-    elif not isinstance(parsed, list):
-        print(f"[{backend}] WARNING — Parsed JSON was not a list/object "
-              f"(got {type(parsed).__name__}). Raw: {raw[:200]}")
-        parsed = []
-
-    valid = [item for item in parsed if isinstance(item, dict)]
-    if len(valid) != len(parsed):
-        print(f"[{backend}] WARNING — dropped {len(parsed) - len(valid)} "
-              f"non-object entries from parsed response.")
 
     diag["returned"] = len(valid)
     # Enforce the equal request budget: an LLM may over-generate.
@@ -927,14 +1003,23 @@ def llm_guided_generator(policy: Policy, n: int, seed: int, client: LLMClient = 
     return requests
 
 
-def llm_guided_hybrid_generator(policy: Policy, n: int, seed: int, client: LLMClient = None) -> List[Request]:
+def llm_guided_hybrid_generator(policy: Policy, n: int, seed: int, client: LLMClient = None,
+                                llm_reqs: List[Request] = None) -> List[Request]:
     """LLM-guided synthesis + the symbolic rule-pair conflict-witness pass.
     This is the "AXIS-Gen" configuration proposed in the research document:
     an LLM front end for semantic/boundary/negation reasoning, backed by a
     lightweight symbolic pass that closes the specific gap the pure
     LLM-guided prototype was empirically found to miss (see
-    rule_pair_conflict_probes docstring above)."""
+    rule_pair_conflict_probes docstring above).
+
+    If `llm_reqs` (the plain LLM-Guided suite for the same seed) is given, it
+    is REUSED instead of calling the LLM again. This makes the comparison
+    LLM-Guided vs LLM-Guided+Symbolic a paired ablation: the only difference
+    is the symbolic probes (which replace the last suite entries to keep the
+    budget), not an independent stochastic LLM sample."""
     probes = rule_pair_conflict_probes(policy)
     remaining = max(0, n - len(probes))
+    if llm_reqs is not None:
+        return probes + list(llm_reqs[:remaining])
     llm_reqs = llm_guided_generator(policy, remaining, seed, client=client) if remaining else []
     return probes + llm_reqs

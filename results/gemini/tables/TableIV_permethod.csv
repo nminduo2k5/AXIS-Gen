@@ -1,5 +1,0 @@
-﻿Seed,Method,#Requests,Mutation Score,Killed,Total,Rule Coverage,Req->95%,Req->20killed,PERMIT,DENY,NA
-1,Random,40,54.9%,28,51,50.0%,32,16,2,5,33
-1,Pairwise (2-way),29,49.0%,25,51,50.0%,24,18,3,4,22
-1,LLM-Guided,0,0.0%,0,51,0.0%,0,1,0,0,0
-1,LLM-Guided+Symbolic,2,9.8%,5,51,50.0%,2,3,0,2,0

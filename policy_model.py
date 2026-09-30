@@ -306,7 +306,7 @@ def _emit_match(parent, pred: Predicate) -> None:
     m = etree.SubElement(match_el, "{%s}Match" % XACML_NS)
     m.set("MatchId", _OP_URN.get(pred.op, "urn:oasis:names:tc:xacml:1.0:function:string-equal"))
     v = etree.SubElement(m, "{%s}AttributeValue" % XACML_NS)
-    v.text = str(pred.value)
+    v.text = fmt_value(pred.value)
     d = etree.SubElement(m, "{%s}AttributeDesignator" % XACML_NS)
     d.set("Category", _CAT_URN.get(pred.ref.category, pred.ref.category))
     d.set("AttributeId", f"ics:{pred.ref.category}:{pred.ref.attribute}")
@@ -317,11 +317,19 @@ def _describe_bool(e: BoolExpr) -> str:
         return "true"
     if e.kind == "leaf":
         p = e.leaf
-        return f"{p.ref.category}.{p.ref.attribute} {p.op} {p.value!r}"
+        return f"{p.ref.category}.{p.ref.attribute} {p.op} {fmt_value(p.value)}"
     if e.kind == "not":
         return "NOT (" + _describe_bool(e.children[0]) + ")"
     joiner = " AND " if e.kind == "and" else " OR "
     return "(" + joiner.join(_describe_bool(c) for c in e.children) + ")"
+
+
+def fmt_value(v) -> str:
+    """Deterministic text form of a predicate value (sets are printed sorted,
+    because Python's set iteration order changes between processes)."""
+    if isinstance(v, (set, frozenset)):
+        return "{" + ", ".join(repr(x) for x in sorted(v)) + "}"
+    return str(v)
 
 
 def domain_values(ref: AttrRef, domains: AttributeDomain = ICS_ATTRIBUTE_DOMAINS) -> List[Any]:

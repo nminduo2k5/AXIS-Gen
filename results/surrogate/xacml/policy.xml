@@ -16,7 +16,7 @@
       </AllOf>
     </Target>
     <Condition>
-      <!-- condition: resource.zone in {'level2_supervisory', 'level1_control'} -->
+      <!-- condition: resource.zone in {'level1_control', 'level2_supervisory'} -->
     </Condition>
   </Rule>
   <Rule RuleId="R2_engineer_readwrite" Effect="Permit">
@@ -35,7 +35,7 @@
       </AllOf>
     </Target>
     <Condition>
-      <!-- condition: (resource.zone in {'level2_supervisory', 'level0_field', 'level1_control'} AND environment.plant_mode neq 'emergency') -->
+      <!-- condition: (resource.zone in {'level0_field', 'level1_control', 'level2_supervisory'} AND environment.plant_mode neq emergency) -->
     </Condition>
   </Rule>
   <Rule RuleId="R3_deny_override_when_normal" Effect="Deny">
@@ -54,7 +54,7 @@
       </AllOf>
     </Target>
     <Condition>
-      <!-- condition: environment.safety_state eq 'normal' -->
+      <!-- condition: environment.safety_state eq normal -->
     </Condition>
   </Rule>
   <Rule RuleId="R4_permit_engineer_override" Effect="Permit">
@@ -79,7 +79,7 @@
       </AllOf>
     </Target>
     <Condition>
-      <!-- condition: (environment.safety_state eq 'maintenance' AND subject.clearance_level gte 4 AND subject.location eq 'onsite') -->
+      <!-- condition: (environment.safety_state eq maintenance AND subject.clearance_level gte 4 AND subject.location eq onsite) -->
     </Condition>
   </Rule>
   <Rule RuleId="R5_deny_vendor_field" Effect="Deny">
@@ -92,7 +92,7 @@
       </AllOf>
     </Target>
     <Condition>
-      <!-- condition: resource.zone eq 'level0_field' -->
+      <!-- condition: resource.zone eq level0_field -->
     </Condition>
   </Rule>
   <Rule RuleId="R6_permit_vendor_historian_read" Effect="Permit">
@@ -117,7 +117,7 @@
       </AllOf>
     </Target>
     <Condition>
-      <!-- condition: environment.plant_mode eq 'production' -->
+      <!-- condition: environment.plant_mode eq production -->
     </Condition>
   </Rule>
 </Policy>

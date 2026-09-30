@@ -44,7 +44,8 @@ latexmk -pdf -interaction=nonstopmode AXIS_Gen_ICAI_FAI_2026.tex
 1. Zip các file sau vào 1 file `.zip`:
    - `AXIS_Gen_ICAI_FAI_2026.tex`
    - `IEEEtran.cls`
-   - Toàn bộ folder `results_surrogate/figures/` (chứa 5 file `.png`)
+   - Folder `results_groq/` (chỉ cần 3 file `fig_backends.png`, `fig_eff_120b.png`, `fig_heat_120b.png`)
+   - Folder `results_surrogate/figures/` (5 file `.png`)
 
 2. Vào https://overleaf.com → **New Project** → **Upload Project**
 

@@ -15,7 +15,7 @@
       <AttributeValue DataType="http://www.w3.org/2001/XMLSchema#string">hmi</AttributeValue>
     </Attribute>
     <Attribute AttributeId="ics:resource:zone" IncludeInResult="true">
-      <AttributeValue DataType="http://www.w3.org/2001/XMLSchema#string">level2_supervisory</AttributeValue>
+      <AttributeValue DataType="http://www.w3.org/2001/XMLSchema#string">level1_control</AttributeValue>
     </Attribute>
     <Attribute AttributeId="ics:resource:criticality" IncludeInResult="true">
       <AttributeValue DataType="http://www.w3.org/2001/XMLSchema#string">safety</AttributeValue>

@@ -6,20 +6,20 @@ Chương trình thực nghiệm hoàn chỉnh cho paper:
   ICAI-FAI 2026, CMC University, Hanoi
 
 Chạy toàn bộ pipeline và xuất:
-  1. results/data/raw_results.json            — toàn bộ số liệu thô
-  2. results/data/aggregate_stats.json        — thống kê tổng hợp (mean, std, CI)
-  3. results/tables/TableI_policy_rules.csv   — bảng 6 rule của policy
-  4. results/tables/TableII_mutants.csv       — danh sách 51 mutants
-  5. results/tables/TableIII_main_results.csv — kết quả chính (Bảng III paper)
-  6. results/tables/TableIV_permethod.csv     — chi tiết từng seed × method
-  7. results/figures/fig1_mutation_score.png  — bar chart mutation score
-  8. results/figures/fig2_rule_coverage.png   — bar chart rule coverage
-  9. results/figures/fig3_efficiency.png      — line chart kill progression
-  10. results/figures/fig4_decision_dist.png  — stacked bar decision distribution
-  11. results/figures/fig5_operator_heatmap.png — heatmap kills per operator
-  12. results/xacml/policy.xml                — policy XACML 3.0 XML
-  13. results/xacml/sample_requests/          — 8 sample XACML 3.0 request XML
-  14. results/report/AI-Native-XACML-Experiment-Report.docx   — báo cáo Word đầy đủ
+  1. results/<backend>/data/raw_results.json            — toàn bộ số liệu thô
+  2. results/<backend>/data/aggregate_stats.json        — thống kê tổng hợp (mean, std, CI)
+  3. results/<backend>/tables/TableI_policy_rules.csv   — bảng 6 rule của policy
+  4. results/<backend>/tables/TableII_mutants.csv       — danh sách 51 mutants
+  5. results/<backend>/tables/TableIII_main_results.csv — kết quả chính (Bảng III paper)
+  6. results/<backend>/tables/TableIV_permethod.csv     — chi tiết từng seed × method
+  7. results/<backend>/figures/fig1_mutation_score.png  — bar chart mutation score
+  8. results/<backend>/figures/fig2_rule_coverage.png   — bar chart rule coverage
+  9. results/<backend>/figures/fig3_efficiency.png      — line chart kill progression
+  10. results/<backend>/figures/fig4_decision_dist.png  — stacked bar decision distribution
+  11. results/<backend>/figures/fig5_operator_heatmap.png — heatmap kills per operator
+  12. results/<backend>/xacml/policy.xml                — policy XACML 3.0 XML
+  13. results/<backend>/xacml/sample_requests/          — 8 sample XACML 3.0 request XML
+  14. results/<backend>/report/AI-Native-XACML-Experiment-Report.docx   — báo cáo Word đầy đủ
 
 AI-Native Test Generation for Industrial Access Control — ICAI-FAI 2026
 """
@@ -41,13 +41,14 @@ from dataclasses import dataclass, asdict
 # ── nội bộ ─────────────────────────────────────────────────────────────────
 from policy_model import (
     ICS_ATTRIBUTE_DOMAINS, Decision, Policy, Request,
-    all_attr_refs, domain_values, policy_to_xacml_xml, request_to_xacml_xml,
+    all_attr_refs, domain_values, fmt_value, policy_to_xacml_xml, request_to_xacml_xml,
 )
 from ics_policy import build_ics_policy
 from mutation import Mutant, generate_mutants
 from generators import (
     AnthropicLLMClient,
     GeminiLLMClient,
+    GroqLLMClient,
     HeuristicSurrogateLLMClient,
     LLMClient,
     OpenAILLMClient,
@@ -75,6 +76,11 @@ try:
 except ImportError:
     pass  # python-dotenv chưa cài — dùng biến môi trường hệ thống
 
+# Cho phép script bên ngoài (run_groq_compare.py) chọn model mà không bị
+# .env.<backend> ghi đè (load_dotenv ở trên dùng override=True).
+if os.environ.get("LLM_MODEL_OVERRIDE"):
+    os.environ["LLM_MODEL"] = os.environ["LLM_MODEL_OVERRIDE"]
+
 
 def build_llm_client() -> LLMClient:
     """Tạo LLM client dựa trên LLM_BACKEND trong .env / biến môi trường.
@@ -83,6 +89,7 @@ def build_llm_client() -> LLMClient:
         surrogate  (default) — HeuristicSurrogateLLMClient, không cần API key
         gemini               — Google Gemini, cần GEMINI_API_KEY
         openai               — OpenAI GPT,   cần OPENAI_API_KEY
+        groq                 — Groq Cloud,   cần GROQ_API_KEY
         anthropic            — Anthropic Claude, cần ANTHROPIC_API_KEY
 
     LLM_MODEL (tuỳ chọn) — override model name mặc định của từng client.
@@ -98,6 +105,10 @@ def build_llm_client() -> LLMClient:
         m = model or "gpt-4o-mini"
         print(f"[llm] Backend: OpenAI  model={m}")
         return OpenAILLMClient(model=m)
+    elif backend == "groq":
+        m = model or "openai/gpt-oss-120b"
+        print(f"[llm] Backend: Groq  model={m}")
+        return GroqLLMClient(model=m)
     elif backend == "anthropic":
         m = model or "claude-sonnet-5-5"
         print(f"[llm] Backend: Anthropic (Claude)  model={m}")
@@ -215,7 +226,9 @@ COLORS = {
 }
 
 def _get_out() -> Path:
-    return Path("results") / os.environ.get("LLM_BACKEND", "surrogate")
+    base = Path("results") / os.environ.get("LLM_BACKEND", "surrogate")
+    sub = os.environ.get("RESULTS_SUBDIR", "").strip()   # vd: tên model khi so sánh nhiều model
+    return base / sub if sub else base
 
 OUT = _get_out()
 
@@ -252,11 +265,15 @@ REQS_CACHE: Dict[Tuple[int, str], List[Request]] = {}
 
 def generate_requests(policy: Policy, seed: int, client: LLMClient = None) -> Dict[str, List[Request]]:
     client = client or build_llm_client()
+    # One LLM call per seed. The hybrid suite REUSES that same LLM output and
+    # only adds the symbolic conflict-witness probes -> paired ablation.
+    llm_reqs = llm_guided_generator(policy, N_BUDGET, seed, client=client)
     return {
         "random":            random_generator(N_BUDGET, seed),
         "pairwise":          pairwise_generator(seed, max_tests=N_BUDGET),
-        "llm_guided":        llm_guided_generator(policy, N_BUDGET, seed, client=client),
-        "llm_guided_hybrid": llm_guided_hybrid_generator(policy, N_BUDGET, seed, client=client),
+        "llm_guided":        llm_reqs,
+        "llm_guided_hybrid": llm_guided_hybrid_generator(policy, N_BUDGET, seed, client=client,
+                                                         llm_reqs=llm_reqs),
     }
 
 # ═══════════════════════════════════════════════════════════════════════════
@@ -286,14 +303,26 @@ def run_experiments(policy: Policy, mutants: List[Mutant]) -> List[PerSeedResult
     total_runs = len(SEEDS) * len(METHODS)
     done = 0
     t0 = time.time()
+    consecutive_failed = 0
     client = build_llm_client()   # built once; reused (connection + fallback state)
 
     for seed in SEEDS:
         n_diag = len(LLM_DIAGNOSTICS)
         reqs_map = generate_requests(policy, seed, client=client)
-        new_diag = LLM_DIAGNOSTICS[n_diag:]    # [llm_guided, llm_guided_hybrid]
-        failed_map = {"llm_guided": bool(new_diag and new_diag[0]["failed"]),
-                      "llm_guided_hybrid": bool(len(new_diag) > 1 and new_diag[1]["failed"])}
+        new_diag = LLM_DIAGNOSTICS[n_diag:]    # [llm_guided] (hybrid reuses it)
+        llm_failed = bool(new_diag and new_diag[0]["failed"])
+        failed_map = {"llm_guided": llm_failed, "llm_guided_hybrid": llm_failed}
+        # Real LLM failing on consecutive seeds = systemic problem (quota,
+        # outage, ...): abort instead of producing a report full of zeros.
+        if new_diag and all(d["failed"] for d in new_diag):
+            consecutive_failed += 1
+            if consecutive_failed >= 2:
+                raise RuntimeError(
+                    f"LLM backend failed on {consecutive_failed} consecutive seeds "
+                    "(see [openai]/[gemini] messages above). Aborting: fix the API "
+                    "key/quota, then re-run.")
+        else:
+            consecutive_failed = 0
         for method in METHODS:
             reqs = reqs_map[method]
             REQS_CACHE[(seed, method)] = reqs
@@ -440,9 +469,9 @@ def save_csv_tables(policy: Policy, mutants: List[Mutant],
         w = csv.writer(f)
         w.writerow(["Rule ID", "Effect", "Description", "Target Predicates", "Condition Predicates"])
         for r in policy.rules:
-            tp = "; ".join(f"{p.ref.category}.{p.ref.attribute} {p.op} {p.value}"
+            tp = "; ".join(f"{p.ref.category}.{p.ref.attribute} {p.op} {fmt_value(p.value)}"
                            for p in r.target.leaves())
-            cp = "; ".join(f"{p.ref.category}.{p.ref.attribute} {p.op} {p.value}"
+            cp = "; ".join(f"{p.ref.category}.{p.ref.attribute} {p.op} {fmt_value(p.value)}"
                            for p in r.condition.leaves())
             w.writerow([r.rule_id, r.effect.name, r.description, tp, cp])
 
@@ -607,9 +636,9 @@ def save_excel(policy: Policy, mutants: List[Mutant],
     ws3.column_dimensions["E"].width = 40
     _hdr_row(ws3, 1, ["Rule ID","Effect","Description","Target Predicates","Condition Predicates"])
     for ri, rule in enumerate(policy.rules, 2):
-        tp = "\n".join(f"{p.ref.category}.{p.ref.attribute} {p.op} {p.value}"
+        tp = "\n".join(f"{p.ref.category}.{p.ref.attribute} {p.op} {fmt_value(p.value)}"
                        for p in rule.target.leaves())
-        cp = "\n".join(f"{p.ref.category}.{p.ref.attribute} {p.op} {p.value}"
+        cp = "\n".join(f"{p.ref.category}.{p.ref.attribute} {p.op} {fmt_value(p.value)}"
                        for p in rule.condition.leaves())
         vals = [rule.rule_id, rule.effect.name, rule.description, tp, cp]
         for ci, v in enumerate(vals, 1):
@@ -1080,10 +1109,10 @@ C.push(mkTable(
   [
     ['RCM','Rule Combining-algorithm Mutation','Swap combining algorithm (deny-overrides↔permit-overrides/first-applicable)','2'],
     ['CEM','rule effeCt Mutation','Flip Permit↔Deny on a rule','6'],
-    ['CPM','Comparison oPeration Mutation','Flip predicate operator (eq→neq, >=→<, ...)','18'],
-    ['CVM','Constant Value boundary Mutation','Shift numeric threshold ±1','4'],
-    ['TRM','Target Removal Mutation','Drop one predicate from rule Target (over-broaden)','9'],
-    ['LOM','Logical Operator Mutation','AND→OR in rule Condition','3'],
+    ['CPM','Comparison oPeration Mutation','Flip predicate operator (eq→neq, >=→<, ...)','22'],
+    ['CVM','Constant Value boundary Mutation','Shift numeric threshold ±1','1'],
+    ['TRM','Target Removal Mutation','Drop one predicate from rule Target (over-broaden)','12'],
+    ['LOM','Logical Operator Mutation','AND→OR in rule Condition','2'],
     ['MRD','Missing Rule Deletion','Delete an entire rule','6'],
     [{text:'TOTAL',bold:true},'','',{text:String(TOTAL_MUT),bold:true}],
   ],

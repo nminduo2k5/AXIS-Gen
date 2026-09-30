@@ -1,0 +1,56 @@
+2026-09-30 07:34:01  INFO     Log file: G:\AI-Native-TestGen-ICAI-FAI-2026_Full-Experiment\results\openai\logs\experiment_20260930_073401.log
+2026-09-30 07:34:01  INFO     LLM backend: openai
+2026-09-30 07:34:01  INFO     ======================================================================
+2026-09-30 07:34:01  INFO       AI-Native Test Generation — Full Experiment Pipeline
+2026-09-30 07:34:01  INFO       ICAI-FAI 2026 — CMC University, Hanoi
+2026-09-30 07:34:01  INFO     ======================================================================
+2026-09-30 07:34:01  INFO     [setup] Output directories created under ./results/
+2026-09-30 07:34:01  INFO     [policy] ICS-WaterTreatment-ABAC-v1: 6 rules, combining=deny-overrides
+2026-09-30 07:34:01  INFO     [mutants] 51 mutants across ['CEM', 'CPM', 'CVM', 'LOM', 'MRD', 'RCM', 'TRM']
+2026-09-30 07:34:01  INFO     
+[experiment] Running main experiment ...
+2026-09-30 07:34:01  INFO     [llm] Backend: OpenAI  model=gpt-4o-mini
+2026-09-30 07:34:14  ERROR    UNCAUGHT EXCEPTION: Traceback (most recent call last):
+  File "G:\AI-Native-TestGen-ICAI-FAI-2026_Full-Experiment\generators.py", line 528, in generate
+    resp = self._create(system_prompt, user_prompt, seed)
+  File "G:\AI-Native-TestGen-ICAI-FAI-2026_Full-Experiment\generators.py", line 522, in _create
+    return self._get_client().chat.completions.create(**kwargs)
+           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^
+  File "C:\Users\HP\anaconda3\envs\messi\Lib\site-packages\openai\_utils\_utils.py", line 287, in wrapper
+    return func(*args, **kwargs)
+  File "C:\Users\HP\anaconda3\envs\messi\Lib\site-packages\openai\resources\chat\completions\completions.py", line 925, in create
+    return self._post(
+           ~~~~~~~~~~^
+        "/chat/completions",
+        ^^^^^^^^^^^^^^^^^^^^
+    ...<43 lines>...
+        stream_cls=Stream[ChatCompletionChunk],
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "C:\Users\HP\anaconda3\envs\messi\Lib\site-packages\openai\_base_client.py", line 1242, in post
+    return cast(ResponseT, self.request(cast_to, opts, stream=stream, stream_cls=stream_cls))
+                           ~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\HP\anaconda3\envs\messi\Lib\site-packages\openai\_base_client.py", line 1037, in request
+    raise self._make_status_error_from_response(err.response) from None
+openai.AuthenticationError: Error code: 401 - {'error': {'message': 'Your API key has expired. Create a new API key to continue.', 'type': 'invalid_request_error', 'code': 'expired_secret_key', 'param': None}, 'status': 401}
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "G:\AI-Native-TestGen-ICAI-FAI-2026_Full-Experiment\main_experiment.py", line 1413, in <module>
+    main()
+    ~~~~^^
+  File "G:\AI-Native-TestGen-ICAI-FAI-2026_Full-Experiment\main_experiment.py", line 1379, in main
+    results = run_experiments(policy, mutants)
+  File "G:\AI-Native-TestGen-ICAI-FAI-2026_Full-Experiment\main_experiment.py", line 293, in run_experiments
+    reqs_map = generate_requests(policy, seed, client=client)
+  File "G:\AI-Native-TestGen-ICAI-FAI-2026_Full-Experiment\main_experiment.py", line 258, in generate_requests
+    "llm_guided":        llm_guided_generator(policy, N_BUDGET, seed, client=client),
+                         ~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "G:\AI-Native-TestGen-ICAI-FAI-2026_Full-Experiment\generators.py", line 860, in llm_guided_generator
+    raw = client.generate(system_prompt, user_prompt, seed=seed)
+  File "G:\AI-Native-TestGen-ICAI-FAI-2026_Full-Experiment\generators.py", line 538, in generate
+    raise RuntimeError(f"[openai] configuration error: {e}") from e
+RuntimeError: [openai] configuration error: Error code: 401 - {'error': {'message': 'Your API key has expired. Create a new API key to continue.', 'type': 'invalid_request_error', 'code': 'expired_secret_key', 'param': None}, 'status': 401}
+

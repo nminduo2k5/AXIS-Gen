@@ -1,0 +1,7 @@
+﻿Rule ID,Effect,Description,Target Predicates,Condition Predicates
+R1_operator_read,PERMIT,Operators can read HMI/PLC state in control & supervisory zones.,subject.role eq operator; action.id eq read,"resource.zone in {'level1_control', 'level2_supervisory'}"
+R2_engineer_readwrite,PERMIT,Engineers can read/write field..supervisory assets outside emergencies.,"subject.role eq engineer; action.id in {'read', 'write'}","resource.zone in {'level1_control', 'level2_supervisory', 'level0_field'}; environment.plant_mode neq emergency"
+R3_deny_override_when_normal,DENY,Safety interlocks cannot be overridden while safety_state=normal.,action.id eq override_interlock; resource.criticality eq safety,environment.safety_state eq normal
+R4_permit_engineer_override,PERMIT,Cleared on-site engineers may override a safety interlock during maintenance.,subject.role eq engineer; action.id eq override_interlock; resource.criticality eq safety,environment.safety_state eq maintenance; subject.clearance_level gte 4; subject.location eq onsite
+R5_deny_vendor_field,DENY,Vendors are denied access to level-0 field-zone devices.,subject.role eq vendor,resource.zone eq level0_field
+R6_permit_vendor_historian_read,PERMIT,Vendors may read the historian during normal production.,subject.role eq vendor; action.id eq read; resource.type eq historian,environment.plant_mode eq production

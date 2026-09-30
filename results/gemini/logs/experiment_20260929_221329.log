@@ -1,0 +1,34 @@
+2026-09-29 22:13:29  INFO     Log file: G:\AI-Native-TestGen-ICAI-FAI-2026_Full-Experiment\results\gemini\logs\experiment_20260929_221329.log
+2026-09-29 22:13:29  INFO     LLM backend: gemini
+2026-09-29 22:13:29  INFO     ======================================================================
+2026-09-29 22:13:29  INFO       AI-Native Test Generation — Full Experiment Pipeline
+2026-09-29 22:13:29  INFO       ICAI-FAI 2026 — CMC University, Hanoi
+2026-09-29 22:13:29  INFO     ======================================================================
+2026-09-29 22:13:29  INFO     [setup] Output directories created under ./results/
+2026-09-29 22:13:29  INFO     [policy] ICS-WaterTreatment-ABAC-v1: 6 rules, combining=deny-overrides
+2026-09-29 22:13:29  INFO     [mutants] 51 mutants across ['CEM', 'CPM', 'CVM', 'LOM', 'MRD', 'RCM', 'TRM']
+2026-09-29 22:13:29  INFO     
+[experiment] Running main experiment ...
+2026-09-29 22:13:29  INFO     [llm] Backend: Gemini  model=gemini-3.5-flash
+2026-09-29 22:13:29  INFO     [gemini] Configured model: gemini-3.5-flash (will validate on first call)
+2026-09-29 22:13:37  INFO     [gemini] gemini-3.5-flash permanently unavailable: 403 PERMISSION_DENIED. {'error': {'code': 403, 'message': 'Your project has been denied access. Please contact support.'
+2026-09-29 22:13:37  INFO     [gemini] gemini-3.5-flash-lite permanently unavailable: 403 PERMISSION_DENIED. {'error': {'code': 403, 'message': 'Your project has been denied access. Please contact support.'
+2026-09-29 22:13:37  ERROR    UNCAUGHT EXCEPTION: Traceback (most recent call last):
+  File "G:\AI-Native-TestGen-ICAI-FAI-2026_Full-Experiment\main_experiment.py", line 1413, in <module>
+    main()
+    ~~~~^^
+  File "G:\AI-Native-TestGen-ICAI-FAI-2026_Full-Experiment\main_experiment.py", line 1379, in main
+    results = run_experiments(policy, mutants)
+  File "G:\AI-Native-TestGen-ICAI-FAI-2026_Full-Experiment\main_experiment.py", line 293, in run_experiments
+    reqs_map = generate_requests(policy, seed, client=client)
+  File "G:\AI-Native-TestGen-ICAI-FAI-2026_Full-Experiment\main_experiment.py", line 258, in generate_requests
+    "llm_guided":        llm_guided_generator(policy, N_BUDGET, seed, client=client),
+                         ~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "G:\AI-Native-TestGen-ICAI-FAI-2026_Full-Experiment\generators.py", line 860, in llm_guided_generator
+    raw = client.generate(system_prompt, user_prompt, seed=seed)
+  File "G:\AI-Native-TestGen-ICAI-FAI-2026_Full-Experiment\generators.py", line 468, in generate
+    raise RuntimeError(
+        "[gemini] All models rejected with 403/404 (API key / Google project "
+        f"has no access): {str(permanent_errors[0])[:200]}")
+RuntimeError: [gemini] All models rejected with 403/404 (API key / Google project has no access): 403 PERMISSION_DENIED. {'error': {'code': 403, 'message': 'Your project has been denied access. Please contact support.', 'status': 'PERMISSION_DENIED'}}
+

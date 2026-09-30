@@ -1,0 +1,32 @@
+2026-09-21 19:16:37  INFO     Log file: C:\Users\Admin\Desktop\AI-Native-TestGen-ICAI-FAI-2026_Full-Experiment\results\gemini\logs\experiment_20260921_191637.log
+2026-09-21 19:16:37  INFO     LLM backend: gemini
+2026-09-21 19:16:37  INFO     ======================================================================
+2026-09-21 19:16:37  INFO       AI-Native Test Generation — Full Experiment Pipeline
+2026-09-21 19:16:37  INFO       ICAI-FAI 2026 — CMC University, Hanoi
+2026-09-21 19:16:37  INFO     ======================================================================
+2026-09-21 19:16:37  INFO     [setup] Output directories created under ./results/
+2026-09-21 19:16:37  INFO     [policy] ICS-WaterTreatment-ABAC-v1: 6 rules, combining=deny-overrides
+2026-09-21 19:16:37  INFO     [mutants] 51 mutants across ['CEM', 'CPM', 'CVM', 'LOM', 'MRD', 'RCM', 'TRM']
+2026-09-21 19:16:37  INFO     
+[experiment] Running main experiment ...
+2026-09-21 19:16:37  INFO     [llm] Backend: Gemini  model=gemini-3.5-flash
+2026-09-21 19:16:37  INFO     [gemini] Configured model: gemini-3.5-flash (will validate on first call)
+2026-09-21 19:16:58  INFO     [gemini] 503 transient (attempt 1/6): retrying in 2.9s...
+2026-09-21 19:17:14  INFO     [gemini] Raw response received (231 chars)
+2026-09-21 19:17:14  INFO     [GeminiLLMClient] Raw response (first 300 chars): [
+  {
+    "comment": "Activate R1: Operator reading HMI in level1_control zone",
+    "subject.role": "operator",
+    "subject.clearance_level": 1,
+    "subject.location": "onsite",
+    "resource.type": "hmi",
+    "resource.zone": "
+2026-09-21 19:17:14  INFO     [GeminiLLMClient] WARNING — Could not extract valid JSON. Raw: [
+  {
+    "comment": "Activate R1: Operator reading HMI in level1_control zone",
+    "subject.role": "operator",
+    "subject.clearance_level": 1,
+    "subject.location": "onsite",
+    "resource.type"
+2026-09-21 19:17:14  INFO     [GeminiLLMClient] Parsed request count: 0
+2026-09-21 19:17:15  INFO     [llm_guided] seed=1 generated 0 requests

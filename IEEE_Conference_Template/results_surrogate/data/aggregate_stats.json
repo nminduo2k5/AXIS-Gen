@@ -1,0 +1,93 @@
+{
+  "aggregate": {
+    "random": {
+      "n_seeds": 5,
+      "n_req_mean": 40,
+      "mutation_score_mean": 0.5333333333333333,
+      "mutation_score_std": 0.03802101848953986,
+      "mutation_score_min": 0.49019607843137253,
+      "mutation_score_max": 0.5882352941176471,
+      "rule_coverage_mean": 0.5333333333333333,
+      "rule_coverage_std": 0.06666666666666665,
+      "req_to_fixed_mean": 16,
+      "req_to_fixed_std": 4.774934554525329,
+      "req_to_fixed_reached_in": 5,
+      "permit_mean": 4.6,
+      "deny_mean": 3.4,
+      "na_mean": 32,
+      "killed_mean": 27.2,
+      "total_mutants": 51
+    },
+    "pairwise": {
+      "n_seeds": 5,
+      "n_req_mean": 30.4,
+      "mutation_score_mean": 0.5686274509803921,
+      "mutation_score_std": 0.05947353289452196,
+      "mutation_score_min": 0.49019607843137253,
+      "mutation_score_max": 0.6666666666666666,
+      "rule_coverage_mean": 0.6,
+      "rule_coverage_std": 0.08164965809277258,
+      "req_to_fixed_mean": 13.2,
+      "req_to_fixed_std": 3.3105890714493698,
+      "req_to_fixed_reached_in": 5,
+      "permit_mean": 3,
+      "deny_mean": 4.2,
+      "na_mean": 23.2,
+      "killed_mean": 29,
+      "total_mutants": 51
+    },
+    "llm_guided": {
+      "n_seeds": 5,
+      "n_req_mean": 40,
+      "mutation_score_mean": 0.9411764705882353,
+      "mutation_score_std": 0.021479315980594754,
+      "mutation_score_min": 0.9019607843137255,
+      "mutation_score_max": 0.9607843137254902,
+      "rule_coverage_mean": 1.0,
+      "rule_coverage_std": 0.0,
+      "req_to_fixed_mean": 5.6,
+      "req_to_fixed_std": 1.8547236990991407,
+      "req_to_fixed_reached_in": 5,
+      "permit_mean": 7.4,
+      "deny_mean": 2.8,
+      "na_mean": 29.8,
+      "killed_mean": 48,
+      "total_mutants": 51
+    },
+    "llm_guided_hybrid": {
+      "n_seeds": 5,
+      "n_req_mean": 40,
+      "mutation_score_mean": 0.9607843137254902,
+      "mutation_score_std": 0.021479315980594754,
+      "mutation_score_min": 0.9215686274509803,
+      "mutation_score_max": 0.9803921568627451,
+      "rule_coverage_mean": 1.0,
+      "rule_coverage_std": 0.0,
+      "req_to_fixed_mean": 6.8,
+      "req_to_fixed_std": 1.7204650534085253,
+      "req_to_fixed_reached_in": 5,
+      "permit_mean": 7.4,
+      "deny_mean": 4.4,
+      "na_mean": 28.2,
+      "killed_mean": 49,
+      "total_mutants": 51
+    }
+  },
+  "survivor_analysis": {
+    "budget": 300,
+    "killed": 49,
+    "total": 51,
+    "survivors": [
+      {
+        "id": "RCM_permit-overrides",
+        "op": "RCM",
+        "desc": "combining algorithm deny-overrides -> permit-overrides"
+      },
+      {
+        "id": "RCM_first-applicable",
+        "op": "RCM",
+        "desc": "combining algorithm deny-overrides -> first-applicable"
+      }
+    ]
+  }
+}

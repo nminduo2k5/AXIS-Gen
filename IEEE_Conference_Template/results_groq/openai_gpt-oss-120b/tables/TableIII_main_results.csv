@@ -1,5 +1,0 @@
-﻿Method,Avg #Requests,Mutation Score Mean,Mutation Score Std,Rule Coverage Mean,Rule Coverage Std,Req->20-killed Mean,Req->20-killed Std,PERMIT Mean,DENY Mean,NA Mean
-Random,40.0,53.3%,±3.8,53.3%,±6.7,16.0,4.8,4.6,3.4,32.0
-Pairwise (2-way),30.4,56.9%,±5.9,60.0%,±8.2,13.2,3.3,3.0,4.2,23.2
-LLM-Guided,40.0,77.6%,±6.6,93.3%,±8.2,7.2,2.3,20.6,5.8,13.6
-LLM-Guided+Symbolic,40.0,79.6%,±6.6,93.3%,±8.2,8.2,1.5,19.4,7.6,13.0

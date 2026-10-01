@@ -1,152 +1,152 @@
-# AXIS-Gen — AI-Native Test Generation cho Kiểm soát truy cập công nghiệp
+# AXIS-Gen — AI-Native Test Generation for Industrial Access Control
 
-Mã nguồn thực nghiệm cho bài báo **"AI-Native Test Generation for Industrial Access Control: LLM-Guided XACML Request Synthesis"** (ICAI-FAI 2026, CMC University, Hà Nội).
+Experimental code for the paper **"AI-Native Test Generation for Industrial Access Control: LLM-Guided XACML Request Synthesis"** (ICAI-FAI 2026, CMC University, Hanoi).
 
-Dự án so sánh 4 phương pháp sinh **request kiểm thử XACML** cho một chính sách ABAC của hệ thống điều khiển công nghiệp (ICS), và đo chất lượng bằng **mutation testing**.
+The project compares 4 methods for generating **XACML test requests** for an ABAC policy of an industrial control system (ICS), and measures their quality with **mutation testing**.
 
-## Mục lục
+## Table of Contents
 
-1. [Ý tưởng tổng quan](#1-ý-tưởng-tổng-quan)
-2. [Cấu trúc thư mục](#2-cấu-trúc-thư-mục)
-3. [Policy được kiểm thử](#3-policy-được-kiểm-thử)
-4. [Các toán tử mutation](#4-các-toán-tử-mutation)
-5. [Các chỉ số đo](#5-các-chỉ-số-đo)
-6. [Cài đặt](#6-cài-đặt)
-7. **[Chạy thực nghiệm với Groq (cách chuẩn)](#7-chạy-thực-nghiệm-với-groq-cách-chuẩn)**
-8. [Chạy với backend khác](#8-chạy-với-backend-khác-gemini--openai--anthropic--surrogate)
-9. [Backend Surrogate — lưu ý khoa học](#9-backend-surrogate--lưu-ý-về-tính-trung-thực-khoa-học)
-10. [Cách pipeline xử lý lỗi LLM](#10-cách-pipeline-xử-lý-lỗi-llm)
-11. [Đầu ra chính](#11-đầu-ra-chính)
-12. [Bảo mật](#12-bảo-mật)
-13. [Khắc phục sự cố](#13-khắc-phục-sự-cố)
-14. [Tài liệu tham khảo](#14-tài-liệu-tham-khảo-phương-pháp)
+1. [Overview](#1-overview)
+2. [Directory Structure](#2-directory-structure)
+3. [The Policy Under Test](#3-the-policy-under-test)
+4. [Mutation Operators](#4-mutation-operators)
+5. [Metrics](#5-metrics)
+6. [Installation](#6-installation)
+7. **[Running the Experiment with Groq (standard way)](#7-running-the-experiment-with-groq-standard-way)**
+8. [Running with Other Backends](#8-running-with-other-backends-gemini--openai--anthropic--surrogate)
+9. [The Surrogate Backend — Scientific Integrity Note](#9-the-surrogate-backend--scientific-integrity-note)
+10. [How the Pipeline Handles LLM Failures](#10-how-the-pipeline-handles-llm-failures)
+11. [Main Outputs](#11-main-outputs)
+12. [Security](#12-security)
+13. [Troubleshooting](#13-troubleshooting)
+14. [Methodological References](#14-methodological-references)
 
 ---
 
-## 1. Ý tưởng tổng quan
+## 1. Overview
 
-Chính sách truy cập (policy) có thể chứa lỗi (sai effect, sai điều kiện, thiếu rule...). Một bộ test tốt là bộ test **phát hiện được nhiều lỗi nhất với ít request nhất**.
+An access control policy can contain faults (wrong effect, wrong condition, missing rule, ...). A good test suite is one that **detects the most faults with the fewest requests**.
 
-Cách đo:
-1. Từ policy gốc, tạo **51 mutant** (mỗi mutant là policy gốc + đúng 1 lỗi được gieo vào).
-2. Chạy một bộ request trên policy gốc và trên từng mutant.
-3. Mutant bị **kill** nếu có ít nhất một request cho quyết định khác policy gốc.
-4. **Mutation score** = số mutant bị kill / tổng số mutant.
+How it is measured:
+1. From the original policy, create **51 mutants** (each mutant is the original policy plus exactly 1 injected fault).
+2. Run a set of requests against the original policy and against every mutant.
+3. A mutant is **killed** if at least one request yields a decision different from the original policy.
+4. **Mutation score** = number of killed mutants / total number of mutants.
 
-Bốn phương pháp sinh request (ngân sách tối đa 40 request):
+The four request generation methods (budget of at most 40 requests):
 
-| Phương pháp | Mô tả |
+| Method | Description |
 |---|---|
-| **Random** | Lấy mẫu ngẫu nhiên đều trên miền giá trị thuộc tính |
-| **Pairwise (2-way)** | Sinh tổ hợp phủ mọi cặp giá trị (baseline cổ điển, kiểu X-CREATE). Dừng khi đã phủ hết cặp nên thường dùng < 40 request (~30) |
-| **LLM-Guided** | Đưa policy dạng ngôn ngữ tự nhiên cho LLM, yêu cầu sinh request kích hoạt từng rule, lật từng điều kiện (MC/DC), thử giá trị biên, thử tương tác giữa các rule |
-| **LLM-Guided + Symbolic** (AXIS-Gen) | Đúng bộ request của LLM-Guided **cộng thêm** các request "cặp rule xung đột" tìm bằng duyệt lưới toàn bộ không gian thuộc tính (2 request với policy này) |
+| **Random** | Uniform random sampling over the attribute value domains |
+| **Pairwise (2-way)** | Generates combinations covering every pair of values (classic baseline, X-CREATE style). Stops once all pairs are covered, so it typically uses < 40 requests (~30) |
+| **LLM-Guided** | Gives the policy in natural language to an LLM and asks it to generate requests that trigger each rule, flip each condition (MC/DC), try boundary values, and test interactions between rules |
+| **LLM-Guided + Symbolic** (AXIS-Gen) | Exactly the LLM-Guided requests **plus** "conflicting rule pair" requests found by exhaustive grid search over the whole attribute space (2 requests for this policy) |
 
-**Thiết kế ablation ghép cặp (paired):** với mỗi seed, pipeline chỉ gọi LLM **một lần**; `LLM-Guided+Symbolic` **dùng lại đúng kết quả đó** và chỉ thêm các request symbolic (cắt bớt cuối để giữ ngân sách). Nhờ vậy chênh lệch giữa hai phương pháp là do bước symbolic, không phải do nhiễu lấy mẫu của LLM.
+**Paired ablation design:** for each seed the pipeline calls the LLM **only once**; `LLM-Guided+Symbolic` **reuses exactly that result** and only appends the symbolic requests (trimming from the end to keep the budget). The difference between the two methods is therefore due to the symbolic step, not to LLM sampling noise.
 
-Lý do có bước symbolic: LLM khó tìm được request mà **hai rule cùng áp dụng** (cần để giết các mutant đổi thuật toán kết hợp — RCM). Bước symbolic bù đúng khoảng trống này.
+Why the symbolic step exists: an LLM struggles to find requests where **two rules apply at the same time** (needed to kill mutants that change the combining algorithm — RCM). The symbolic step fills exactly this gap.
 
 ---
 
-## 2. Cấu trúc thư mục
+## 2. Directory Structure
 
 ```
 .
-├── main_experiment.py     # Chạy 1 backend / 1 model: sinh request, chấm điểm, xuất bảng/hình/báo cáo
-├── run_groq_compare.py    # Chạy nhiều model Groq lần lượt + bảng so sánh (cách chuẩn với Groq)
-├── generators.py          # 4 bộ sinh request + client LLM (Groq, Gemini, OpenAI, Anthropic, Surrogate)
-├── policy_model.py        # Mô hình XACML/ABAC, PDP (deny/permit-overrides, first-applicable), xuất XML
-├── ics_policy.py          # Policy nhà máy xử lý nước (6 rule) — đối tượng được kiểm thử
-├── mutation.py            # 7 toán tử mutation, sinh 51 mutant
-├── harness.py             # Chạy bộ test, tính mutation score, rule coverage, hiệu quả
-├── .env                   # File "router": chọn backend cho main_experiment.py qua ENV_FILE
-├── .env.groq              # Cấu hình Groq          (chứa API key — KHÔNG commit)
-├── .env.gemini            # Cấu hình Gemini       (chứa API key — KHÔNG commit)
-├── .env.openai            # Cấu hình OpenAI GPT    (chứa API key — KHÔNG commit)
-├── .env.anthropic         # Cấu hình Claude        (chứa API key — KHÔNG commit)
-├── .env.surrogate         # Chạy offline, không cần key
-├── IEEE_Conference_Template/   # Bài báo LaTeX (conference_101719.tex) + hình/số liệu dùng trong bài
-└── results/               # Tự tạo khi chạy
-    ├── surrogate/                     # Kết quả backend surrogate
+├── main_experiment.py     # Runs 1 backend / 1 model: generate requests, score, export tables/figures/report
+├── run_groq_compare.py    # Runs several Groq models in turn + comparison table (standard way with Groq)
+├── generators.py          # 4 request generators + LLM clients (Groq, Gemini, OpenAI, Anthropic, Surrogate)
+├── policy_model.py        # XACML/ABAC model, PDP (deny/permit-overrides, first-applicable), XML export
+├── ics_policy.py          # Water-treatment plant policy (6 rules) — the object under test
+├── mutation.py            # 7 mutation operators, generates 51 mutants
+├── harness.py             # Runs test suites, computes mutation score, rule coverage, efficiency
+├── .env                   # "Router" file: selects the backend for main_experiment.py via ENV_FILE
+├── .env.groq              # Groq config          (contains API key — do NOT commit)
+├── .env.gemini            # Gemini config        (contains API key — do NOT commit)
+├── .env.openai            # OpenAI GPT config    (contains API key — do NOT commit)
+├── .env.anthropic         # Claude config        (contains API key — do NOT commit)
+├── .env.surrogate         # Runs offline, no key needed
+├── IEEE_Conference_Template/   # LaTeX paper (conference_101719.tex) + figures/data used in the paper
+└── results/               # Created automatically on run
+    ├── surrogate/                     # Surrogate backend results
     └── groq/
-        ├── model_comparison.csv       # Bảng so sánh các model (do run_groq_compare.py ghi)
-        └── <tên-model>/               # Mỗi model Groq một thư mục, vd: openai_gpt-oss-120b/
+        ├── model_comparison.csv       # Model comparison table (written by run_groq_compare.py)
+        └── <model-name>/              # One directory per Groq model, e.g. openai_gpt-oss-120b/
             ├── data/      raw_results.json, aggregate_stats.json, experiment_results.xlsx
-            ├── tables/    TableI–IV (CSV)
+            ├── tables/    Tables I–IV (CSV)
             ├── figures/   fig1–fig5 (PNG)
-            ├── xacml/     policy.xml + request mẫu XACML 3.0
-            ├── report/    Báo cáo Word (cần Node.js + docx)
-            └── logs/      experiment_<thời gian>.log
+            ├── xacml/     policy.xml + sample XACML 3.0 requests
+            ├── report/    Word report (requires Node.js + docx)
+            └── logs/      experiment_<timestamp>.log
 ```
 
 ---
 
-## 3. Policy được kiểm thử
+## 3. The Policy Under Test
 
-Policy `ICS-WaterTreatment-ABAC-v1`, thuật toán kết hợp **deny-overrides**, 6 rule:
+Policy `ICS-WaterTreatment-ABAC-v1`, combining algorithm **deny-overrides**, 6 rules:
 
-| Rule | Effect | Ý nghĩa |
+| Rule | Effect | Meaning |
 |---|---|---|
-| R1 | PERMIT | Operator đọc HMI/PLC ở vùng control/supervisory |
-| R2 | PERMIT | Engineer đọc/ghi ở vùng field–supervisory, trừ khi ở chế độ khẩn cấp |
-| R3 | DENY | Cấm override safety interlock khi `safety_state = normal` |
-| R4 | PERMIT | Engineer đủ clearance (≥4), tại chỗ, được override interlock khi bảo trì |
-| R5 | DENY | Vendor bị cấm truy cập vùng level-0 field |
-| R6 | PERMIT | Vendor đọc historian khi đang sản xuất |
+| R1 | PERMIT | Operator reads HMI/PLC in the control/supervisory zone |
+| R2 | PERMIT | Engineer reads/writes in the field–supervisory zone, unless in emergency mode |
+| R3 | DENY | Overriding the safety interlock is forbidden when `safety_state = normal` |
+| R4 | PERMIT | Engineer with sufficient clearance (≥4), on site, may override the interlock during maintenance |
+| R5 | DENY | Vendor is forbidden from accessing the level-0 field zone |
+| R6 | PERMIT | Vendor reads the historian during production |
 
-Không gian thuộc tính: 9 thuộc tính (role, clearance_level, location, type, zone, criticality, action, safety_state, plant_mode) → **92.160 tổ hợp**.
+Attribute space: 9 attributes (role, clearance_level, location, type, zone, criticality, action, safety_state, plant_mode) → **92,160 combinations**.
 
-Cố ý **không** thêm rule "default-deny" vì dưới deny-overrides nó sẽ chi phối mọi quyết định và che mất tác dụng của các mutation khác.
+A "default-deny" rule is deliberately **not** added, because under deny-overrides it would dominate every decision and mask the effect of the other mutations.
 
 ---
 
-## 4. Các toán tử mutation
+## 4. Mutation Operators
 
-| Mã | Tên | Lỗi được gieo |
+| Code | Name | Injected fault |
 |---|---|---|
-| RCM | Rule Combining Mutation | Đổi thuật toán kết hợp |
-| CEM | Effect Mutation | Đổi Permit ↔ Deny của một rule |
-| CPM | Comparison Mutation | Đảo toán tử so sánh (eq→neq, ≥→<, ...) |
-| CVM | Constant Value Mutation | Dịch ngưỡng số ±1 |
-| TRM | Target Removal | Bỏ một điều kiện trong Target (mở rộng phạm vi) |
+| RCM | Rule Combining Mutation | Changes the combining algorithm |
+| CEM | Effect Mutation | Flips Permit ↔ Deny of a rule |
+| CPM | Comparison Mutation | Inverts a comparison operator (eq→neq, ≥→<, ...) |
+| CVM | Constant Value Mutation | Shifts a numeric threshold by ±1 |
+| TRM | Target Removal | Removes one condition from the Target (widens the scope) |
 | LOM | Logical Operator Mutation | AND → OR |
-| MRD | Missing Rule Deletion | Xóa cả rule |
+| MRD | Missing Rule Deletion | Deletes an entire rule |
 
-> Lưu ý: mutant `RCM_first-applicable` là **mutant tương đương** với policy này (cho quyết định giống hệt policy gốc trên cả 92.160 điểm), nên mutation score tối đa đạt được là 50/51 ≈ **98.0%**.
-
----
-
-## 5. Các chỉ số đo
-
-- **Mutation score** — tỉ lệ mutant bị kill (chỉ số chính).
-- **Rule coverage** — tỉ lệ rule được "chạm tới" ít nhất một lần.
-- **Requests-to-20-killed** — số request cần để giết 20 mutant (hiệu quả).
-- **Phân bố quyết định** — tỉ lệ PERMIT/DENY/NOT_APPLICABLE (chống bộ test toàn DENY).
-- **Phân tích survivor** — mutant nào sống sót ở ngân sách lớn (300 request, **dùng surrogate**).
+> Note: the `RCM_first-applicable` mutant is an **equivalent mutant** for this policy (it gives decisions identical to the original policy on all 92,160 points), so the maximum achievable mutation score is 50/51 ≈ **98.0%**.
 
 ---
 
-## 6. Cài đặt
+## 5. Metrics
 
-Yêu cầu: Python ≥ 3.10.
+- **Mutation score** — fraction of mutants killed (primary metric).
+- **Rule coverage** — fraction of rules "touched" at least once.
+- **Requests-to-20-killed** — number of requests needed to kill 20 mutants (efficiency).
+- **Decision distribution** — share of PERMIT/DENY/NOT_APPLICABLE (guards against all-DENY test suites).
+- **Survivor analysis** — which mutants survive at a large budget (300 requests, **using the surrogate**).
+
+---
+
+## 6. Installation
+
+Requirement: Python ≥ 3.10.
 
 ```bash
 pip install lxml matplotlib openpyxl numpy python-dotenv
-pip install openai            # cho Groq và OpenAI (Groq dùng API tương thích OpenAI)
-pip install google-genai      # nếu dùng Gemini
-pip install anthropic         # nếu dùng Claude
+pip install openai            # for Groq and OpenAI (Groq uses an OpenAI-compatible API)
+pip install google-genai      # if using Gemini
+pip install anthropic         # if using Claude
 ```
 
-Tùy chọn (xuất báo cáo Word): cài Node.js rồi `npm install -g docx`. Thiếu bước này pipeline vẫn chạy bình thường, chỉ báo lỗi `Cannot find module 'docx'` ở bước cuối và bỏ qua file `.docx` (kết quả khác không bị ảnh hưởng).
+Optional (Word report export): install Node.js, then `npm install -g docx`. Without this step the pipeline still runs normally; it only prints `Cannot find module 'docx'` at the last step and skips the `.docx` file (other results are unaffected).
 
 ---
 
-## 7. Chạy thực nghiệm với Groq (cách chuẩn)
+## 7. Running the Experiment with Groq (standard way)
 
-### 7.1. Chuẩn bị (làm một lần)
+### 7.1. Setup (one time)
 
-1. Lấy API key miễn phí tại https://console.groq.com/keys (dạng `gsk_...`).
-2. Mở file `.env.groq`, điền key và đặt số seed:
+1. Get a free API key at https://console.groq.com/keys (format `gsk_...`).
+2. Open `.env.groq`, fill in the key and set the number of seeds:
 
    ```ini
    LLM_BACKEND=groq
@@ -155,40 +155,40 @@ Tùy chọn (xuất báo cáo Word): cài Node.js rồi `npm install -g docx`. T
    N_SEEDS=5
    ```
 
-   - `N_SEEDS=1` là chế độ chạy thử (nhanh, ít tốn quota); `N_SEEDS=5` là chạy đầy đủ để lấy số liệu cho bài.
-   - Không cần sửa file `.env` khi dùng `run_groq_compare.py` — script tự chọn `.env.groq`.
+   - `N_SEEDS=1` is the trial mode (fast, uses little quota); `N_SEEDS=5` is the full run that produces the numbers for the paper.
+   - You do not need to edit `.env` when using `run_groq_compare.py` — the script selects `.env.groq` itself.
 
-### 7.2. Chạy thử nhanh (khuyến nghị làm trước)
+### 7.2. Quick trial run (recommended first)
 
-Đặt `N_SEEDS=1` trong `.env.groq`, đặt `ENV_FILE=.env.groq` trong `.env`, rồi:
+Set `N_SEEDS=1` in `.env.groq`, set `ENV_FILE=.env.groq` in `.env`, then:
 
 ```bash
 python main_experiment.py
 ```
 
-Kiểm tra trong log:
-- `Parsed request count:` ≈ 40 (không phải 0);
-- `domain-repair: 0/360 values invalid` (hoặc rất thấp);
-- LLM-Guided có mutation score cao hơn Random.
+Check the log for:
+- `Parsed request count:` ≈ 40 (not 0);
+- `domain-repair: 0/360 values invalid` (or very low);
+- LLM-Guided has a higher mutation score than Random.
 
-Nếu ổn, đổi `N_SEEDS=5` và chạy tiếp bước 7.3.
+If everything looks fine, set `N_SEEDS=5` and continue with step 7.3.
 
-### 7.3. Chạy đầy đủ nhiều model — lệnh chuẩn
+### 7.3. Full run over several models — the standard command
 
 ```bash
 python run_groq_compare.py
 ```
 
-Lệnh này chạy **toàn bộ thực nghiệm (5 seed)** lần lượt cho từng model, mỗi model một tiến trình riêng:
+This runs the **entire experiment (5 seeds)** for each model in turn, each model in its own process:
 
-| Model mặc định | Ghi chú |
+| Default model | Note |
 |---|---|
-| `openai/gpt-oss-20b` | Model nhỏ |
-| `openai/gpt-oss-120b` | Model lớn |
+| `openai/gpt-oss-20b` | Small model |
+| `openai/gpt-oss-120b` | Large model |
 
-Trước khi chạy, script hỏi Groq xem key dùng được model nào và **tự bỏ qua** model không tồn tại. Mỗi model mất khoảng 3–5 phút. Một model lỗi không làm dừng các model còn lại.
+Before running, the script asks Groq which models the key can use and **automatically skips** models that do not exist. Each model takes about 3–5 minutes. A failing model does not stop the remaining ones.
 
-**Chỉ chạy một hoặc vài model cụ thể** (đặt biến `GROQ_MODELS`, phân cách bằng dấu phẩy):
+**Run only one or a few specific models** (set the `GROQ_MODELS` variable, comma-separated):
 
 ```powershell
 # PowerShell
@@ -204,37 +204,37 @@ python run_groq_compare.py
 GROQ_MODELS="openai/gpt-oss-120b" python run_groq_compare.py
 ```
 
-Bảng so sánh `results/groq/model_comparison.csv` **gộp mọi model đã có kết quả** (kể cả các lần chạy trước), nên có thể chạy từng model riêng rồi gộp dần.
+The comparison table `results/groq/model_comparison.csv` **merges every model that already has results** (including earlier runs), so you can run models one at a time and merge them gradually.
 
-> **Không phải lúc nào cũng chạy `run_groq_compare.py`:** `python main_experiment.py` chỉ chạy **một** model (lấy từ `LLM_MODEL`) và ghi vào `results/groq/` (không có thư mục con theo model, không có bảng so sánh). Dùng nó để chạy thử; dùng `run_groq_compare.py` cho số liệu chính thức.
+> **You don't always have to run `run_groq_compare.py`:** `python main_experiment.py` runs only **one** model (taken from `LLM_MODEL`) and writes to `results/groq/` (no per-model subdirectory, no comparison table). Use it for trial runs; use `run_groq_compare.py` for the official numbers.
 
-### 7.4. Kết quả
+### 7.4. Results
 
-Sau khi chạy, console in bảng tổng hợp và lưu:
+After the run, the console prints a summary table and saves:
 
-- `results/groq/model_comparison.csv` — bảng so sánh các model: mutation score, rule coverage, số seed hợp lệ / lỗi, số request trung bình, tỉ lệ giá trị LLM sai miền;
-- `results/groq/<tên-model>/` — bảng, hình, xlsx, XACML, log chi tiết của từng model (xem cấu trúc ở mục 2).
+- `results/groq/model_comparison.csv` — model comparison table: mutation score, rule coverage, number of valid / failed seeds, average request count, rate of out-of-domain LLM values;
+- `results/groq/<model-name>/` — tables, figures, xlsx, XACML and detailed logs for each model (see the structure in section 2).
 
-Hai baseline Random và Pairwise **không phụ thuộc model**, nên có số liệu giống hệt nhau ở mọi thư mục model — điều này là bình thường.
+The two baselines Random and Pairwise **do not depend on the model**, so they have identical numbers in every model directory — this is normal.
 
-### 7.5. Lưu ý riêng của Groq
+### 7.5. Groq-specific notes
 
-- **Gói miễn phí có giới hạn token/phút và token/ngày.** Nếu gặp `429`, chờ vài phút rồi chạy lại model đó.
-- **`qwen/qwen3.8-27b` không chạy được trên gói miễn phí:** giới hạn 1000 token output/phút, trong khi một lần sinh 40 request cần khoảng 5000. Pipeline dừng ngay với thông báo "request exceeds this model's per-minute token limit". Cần nâng cấp Groq Dev Tier; sau đó thêm bằng `GROQ_MODELS=openai/gpt-oss-120b,qwen/qwen3.8-27b`.
-- Danh sách model Groq thay đổi thường xuyên. Model cũ (như Llama 3.x) có thể trả `404 model_not_found`. Xem model hiện có ở https://console.groq.com/docs/models — hoặc để `run_groq_compare.py` tự in ra danh sách khả dụng.
-- Với các model `gpt-oss`, client đặt `reasoning_effort="low"` để model không dùng hết token cho phần suy luận ẩn (nếu không, JSON đầu ra dễ bị cắt cụt).
-- `temperature = 0.7`, `seed` được truyền vào API; tuy nhiên suy luận trên dịch vụ đám mây **không đảm bảo lặp lại chính xác từng bit** — hai lần chạy cùng cấu hình có thể lệch vài điểm phần trăm mutation score. Vì vậy hãy báo cáo mean ± std trên 5 seed và không suy diễn từ chênh lệch nhỏ.
+- **The free tier has tokens-per-minute and tokens-per-day limits.** If you get `429`, wait a few minutes and re-run that model.
+- **`qwen/qwen3.8-27b` does not work on the free tier:** the limit is 1000 output tokens/minute, while generating 40 requests needs about 5000. The pipeline stops immediately with the message "request exceeds this model's per-minute token limit". You need to upgrade to Groq Dev Tier; afterwards add it with `GROQ_MODELS=openai/gpt-oss-120b,qwen/qwen3.8-27b`.
+- The list of Groq models changes frequently. Older models (such as Llama 3.x) may return `404 model_not_found`. See the current models at https://console.groq.com/docs/models — or let `run_groq_compare.py` print the available list itself.
+- For `gpt-oss` models the client sets `reasoning_effort="low"` so that the model does not spend all its tokens on hidden reasoning (otherwise the JSON output tends to be truncated).
+- `temperature = 0.7`, and `seed` is passed to the API; however, cloud inference **does not guarantee bit-exact reproducibility** — two runs with the same configuration may differ by a few mutation-score percentage points. Therefore report mean ± std over 5 seeds and do not draw conclusions from small differences.
 
-**Cách báo cáo số liệu Groq trong bài (quan trọng):**
-- Ghi **đúng số liệu trong file kết quả** (mean ± std giữa các seed, không làm tròn hay dùng "khoảng"), và nêu rõ mỗi model chỉ chạy **một lần** (5 seed), nên độ dao động giữa các lần chạy chưa được đo.
-- Chênh lệch giữa hai model (20b và 120b) và giữa `LLM-Guided` với `LLM-Guided+Symbolic` (+0.8 đến +1.6 điểm) nhỏ hơn độ lệch chuẩn, nên **không kết luận** model nào tốt hơn hay bước symbolic có ý nghĩa thống kê; chỉ mô tả.
-- Số liệu chính thức là của lần chạy cuối bằng code hiện tại (ablation ghép cặp). Kết quả các lần chạy cũ đã bị ghi đè và không dùng được.
+**How to report Groq numbers in the paper (important):**
+- Report the **exact numbers in the result files** (mean ± std across seeds, no rounding or "about"), and state clearly that each model was run only **once** (5 seeds), so the run-to-run variation has not been measured.
+- The difference between the two models (20b and 120b) and between `LLM-Guided` and `LLM-Guided+Symbolic` (+0.8 to +1.6 points) is smaller than the standard deviation, so **do not conclude** that either model is better or that the symbolic step is statistically significant; only describe it.
+- The official numbers are those of the last run with the current code (paired ablation). Results of older runs were overwritten and are not usable.
 
 ---
 
-## 8. Chạy với backend khác (Gemini / OpenAI / Anthropic / Surrogate)
+## 8. Running with Other Backends (Gemini / OpenAI / Anthropic / Surrogate)
 
-Các backend này chạy bằng `main_experiment.py`. Mở file `.env`, **chỉ để một dòng `ENV_FILE` không bị comment**:
+These backends run via `main_experiment.py`. Open the `.env` file and **leave only one `ENV_FILE` line uncommented**:
 
 ```ini
 # ENV_FILE=.env.surrogate
@@ -244,107 +244,107 @@ ENV_FILE=.env.gemini
 # ENV_FILE=.env.anthropic
 ```
 
-Rồi chạy:
+Then run:
 
 ```bash
 python main_experiment.py
 ```
 
-Mỗi file `.env.<backend>` có dạng:
+Each `.env.<backend>` file looks like this:
 
 ```ini
 LLM_BACKEND=gemini
-GEMINI_API_KEY=<key của bạn>
+GEMINI_API_KEY=<your key>
 LLM_MODEL=gemini-3.5-flash
-N_SEEDS=1        # 1 = chế độ debug; đổi thành 5 khi chạy thật
+N_SEEDS=1        # 1 = debug mode; change to 5 for the real run
 ```
 
-| Backend | Biến key | Model mặc định | Lấy key |
+| Backend | Key variable | Default model | Get a key |
 |---|---|---|---|
 | groq | `GROQ_API_KEY` | `openai/gpt-oss-120b` | https://console.groq.com/keys |
 | gemini | `GEMINI_API_KEY` | `gemini-3.5-flash` | https://aistudio.google.com/app/apikey |
 | openai | `OPENAI_API_KEY` | `gpt-4o-mini` | https://platform.openai.com/api-keys |
 | anthropic | `ANTHROPIC_API_KEY` | `claude-sonnet-5-5` | https://console.anthropic.com/settings/keys |
-| surrogate | (không cần) | — | — |
+| surrogate | (not needed) | — | — |
 
-`LLM_MODEL` ghi đè model mặc định. Anthropic có thêm `ANTHROPIC_WORKSPACE_ID` nếu key không gắn workspace. Kết quả ghi vào `results/<backend>/`, các backend không ghi đè lẫn nhau.
+`LLM_MODEL` overrides the default model. Anthropic additionally supports `ANTHROPIC_WORKSPACE_ID` if the key is not bound to a workspace. Results are written to `results/<backend>/`; backends do not overwrite one another.
 
-Quy trình khuyến nghị cho mọi backend: chạy `surrogate` trước để kiểm tra pipeline offline → chạy `N_SEEDS=1` với LLM thật → đổi `N_SEEDS=5`.
+Recommended workflow for every backend: run `surrogate` first to check the pipeline offline → run `N_SEEDS=1` with the real LLM → change to `N_SEEDS=5`.
 
-Cấu hình mặc định (trong `main_experiment.py`): 5 seed, ngân sách 40 request/phương pháp, ngưỡng hiệu quả 20 mutant.
-
----
-
-## 9. Backend "Surrogate" — lưu ý về tính trung thực khoa học
-
-`HeuristicSurrogateLLMClient` **không phải LLM thật**. Nó thực thi tất định chiến lược prompt (kích hoạt rule, lật từng điều kiện, thử giá trị biên) để kiểm tra pipeline và phương pháp đo mà không cần API.
-
-- Số liệu từ surrogate **không được trình bày như kết quả của LLM thật** trong bài báo — chỉ là mốc tham chiếu cho "trần" của chiến lược.
-- Phân tích survivor (`analyse_survivors`) và request mẫu XACML luôn dùng surrogate, bất kể backend đang chọn.
+Default configuration (in `main_experiment.py`): 5 seeds, a budget of 40 requests per method, an efficiency threshold of 20 mutants.
 
 ---
 
-## 10. Cách pipeline xử lý lỗi LLM
+## 9. The Surrogate Backend — Scientific Integrity Note
 
-| Tình huống | Hành vi |
+`HeuristicSurrogateLLMClient` is **not a real LLM**. It deterministically executes the prompt strategy (trigger rules, flip each condition, try boundary values) to test the pipeline and the measurement method without an API.
+
+- Surrogate numbers **must not be presented as results of a real LLM** in the paper — they are only a reference for the "ceiling" of the strategy.
+- Survivor analysis (`analyse_survivors`) and the sample XACML requests always use the surrogate, regardless of the selected backend.
+
+---
+
+## 10. How the Pipeline Handles LLM Failures
+
+| Situation | Behavior |
 |---|---|
-| Key sai/hết hạn (401), model sai (404), project bị chặn (403) | **Dừng ngay** với thông báo rõ ràng, không cho ra kết quả 0% gây hiểu nhầm |
-| OpenAI: hết credit (`insufficient_quota`) | **Dừng ngay** ("out of credits") |
-| Groq/OpenAI: `Request too large` (vượt giới hạn token/phút của model) | **Dừng ngay** — thử lại không giúp được |
-| 429 do giới hạn tốc độ thông thường | SDK tự thử lại (tối đa 3 lần, theo `retry-after`); Gemini thử lại 3 lần, chờ 20–90 giây |
-| 5xx / quá tải | Thử lại với backoff lũy thừa |
-| LLM trả rỗng (`[]`) / không phải JSON | **Thử lại tối đa 3 lần** với seed lấy mẫu khác trước khi coi là lỗi |
-| Output bị cắt cụt (hết token) | Cảnh báo và cứu lại các object JSON đã hoàn chỉnh |
-| Khối `<think>...</think>` của model suy luận | Tự loại bỏ trước khi đọc JSON |
-| LLM trả thừa request | Cắt về đúng N để giữ ngân sách công bằng (trả thiếu: giữ nguyên, ghi nhận trong log) |
-| Giá trị ngoài miền | Chuẩn hóa nếu chỉ lệch định dạng (`"3"`→3); còn lại thay bằng giá trị ngẫu nhiên và **đếm** tỉ lệ này |
-| Seed mà LLM lỗi | Đánh dấu `failed`, **loại khỏi thống kê** kèm cảnh báo |
-| LLM lỗi ở **2 seed liên tiếp** | **Dừng cả lần chạy** (lỗi hệ thống như hết quota), không xuất báo cáo toàn số 0 |
+| Wrong/expired key (401), wrong model (404), blocked project (403) | **Stops immediately** with a clear message, instead of producing a misleading 0% result |
+| OpenAI: out of credits (`insufficient_quota`) | **Stops immediately** ("out of credits") |
+| Groq/OpenAI: `Request too large` (exceeds the model's per-minute token limit) | **Stops immediately** — retrying does not help |
+| 429 from ordinary rate limiting | The SDK retries automatically (up to 3 times, following `retry-after`); Gemini retries 3 times, waiting 20–90 seconds |
+| 5xx / overload | Retry with exponential backoff |
+| LLM returns empty (`[]`) / non-JSON | **Retries up to 3 times** with a different sampling seed before treating it as a failure |
+| Truncated output (ran out of tokens) | Warns and salvages the JSON objects that are already complete |
+| `<think>...</think>` block of reasoning models | Automatically stripped before parsing the JSON |
+| LLM returns too many requests | Trimmed to exactly N to keep the budget fair (too few: kept as is, noted in the log) |
+| Out-of-domain values | Normalized if only the format differs (`"3"`→3); otherwise replaced with a random value and the rate is **counted** |
+| Seed on which the LLM fails | Marked `failed`, **excluded from the statistics** with a warning |
+| LLM fails on **2 consecutive seeds** | **Aborts the whole run** (systemic error such as exhausted quota); no all-zero report is produced |
 
-Thống kê chất lượng LLM (số request trả về, tỉ lệ giá trị sai miền, số lần thử, seed lỗi) được ghi trong `aggregate_stats.json`, mục `llm_diagnostics`.
-
----
-
-## 11. Đầu ra chính
-
-- **Table I** — 6 rule của policy; **Table II** — 51 mutant
-- **Table III** — kết quả tổng hợp (mean ± std) cho 4 phương pháp
-- **Table IV** — chi tiết từng seed × phương pháp
-- **Fig 1** mutation score · **Fig 2** rule coverage · **Fig 3** tiến trình kill · **Fig 4** phân bố quyết định · **Fig 5** heatmap kill theo toán tử
-- `experiment_results.xlsx` (6 sheet), `policy.xml` và request mẫu XACML 3.0, báo cáo Word
-- `results/groq/model_comparison.csv` — so sánh các model Groq
+LLM quality statistics (number of requests returned, out-of-domain value rate, number of attempts, failed seeds) are recorded in `aggregate_stats.json`, under `llm_diagnostics`.
 
 ---
 
-## 12. Bảo mật
+## 11. Main Outputs
 
-- File `.env*` chứa API key đã được chặn bởi `.gitignore`. **Không commit, không nén chung để gửi.**
-- Key đã từng lộ thì tạo lại ngay trên trang của nhà cung cấp.
-- Repo chỉ nên commit `.env.surrogate` (không có key).
+- **Table I** — the 6 policy rules; **Table II** — the 51 mutants
+- **Table III** — aggregated results (mean ± std) for the 4 methods
+- **Table IV** — per-seed × method details
+- **Fig 1** mutation score · **Fig 2** rule coverage · **Fig 3** kill progress · **Fig 4** decision distribution · **Fig 5** kill heatmap by operator
+- `experiment_results.xlsx` (6 sheets), `policy.xml` and sample XACML 3.0 requests, Word report
+- `results/groq/model_comparison.csv` — comparison of Groq models
 
 ---
 
-## 13. Khắc phục sự cố
+## 12. Security
 
-| Triệu chứng | Nguyên nhân / Cách xử lý |
+- `.env*` files contain API keys and are blocked by `.gitignore`. **Do not commit them or zip them together for sending.**
+- If a key has ever been exposed, regenerate it immediately on the provider's site.
+- Only `.env.surrogate` (which has no key) should be committed to the repo.
+
+---
+
+## 13. Troubleshooting
+
+| Symptom | Cause / Fix |
 |---|---|
-| `404 model_not_found` (Groq) | Model đã bị gỡ hoặc key không có quyền. Xem `https://console.groq.com/docs/models`; `run_groq_compare.py` tự in danh sách model khả dụng |
-| `429 ... Request too large ... OTPM` (Groq, vd Qwen) | Giới hạn token/phút của gói miễn phí nhỏ hơn một câu trả lời. Dùng model khác hoặc nâng cấp Dev Tier |
-| `429 rate_limit_exceeded` (Groq) | Hết token/phút hoặc /ngày. Chờ rồi chạy lại model đó |
-| `401 invalid_api_key` (Groq) | Sai key trong `.env.groq` |
-| `403 PERMISSION_DENIED ... project has been denied access` (Gemini) | Google project của key bị chặn. Tạo key trong **project mới** hoặc dùng tài khoản khác |
-| `401 ... API key has expired` (OpenAI) | Key hết hạn. Tạo key mới, kiểm tra credit |
-| `429 insufficient_quota` (OpenAI) | Hết credit thanh toán |
-| Kết quả LLM-Guided = 0% hoặc ít request | Seed LLM lỗi; xem log tìm `FAILED` / `retrying` và `llm_diagnostics` |
-| Model bị cắt cụt (`finish_reason=length`) | Model suy luận dùng hết token; xem mục 7.5 |
-| `ModuleNotFoundError: lxml` (hoặc openai, dotenv...) | `pip install lxml openai python-dotenv` (xem mục 6) |
-| `Cannot find module 'docx'` | `npm install -g docx` (chỉ ảnh hưởng báo cáo Word) |
-| Cảnh báo "automatic function calling (AFC)" | Vô hại, của SDK Gemini |
+| `404 model_not_found` (Groq) | The model was removed or the key lacks access. See `https://console.groq.com/docs/models`; `run_groq_compare.py` prints the list of available models itself |
+| `429 ... Request too large ... OTPM` (Groq, e.g. Qwen) | The free tier's tokens-per-minute limit is smaller than one answer. Use another model or upgrade to Dev Tier |
+| `429 rate_limit_exceeded` (Groq) | Out of tokens per minute or per day. Wait, then re-run that model |
+| `401 invalid_api_key` (Groq) | Wrong key in `.env.groq` |
+| `403 PERMISSION_DENIED ... project has been denied access` (Gemini) | The key's Google project is blocked. Create a key in a **new project** or use another account |
+| `401 ... API key has expired` (OpenAI) | The key expired. Create a new key and check your credit |
+| `429 insufficient_quota` (OpenAI) | Billing credit exhausted |
+| LLM-Guided result = 0% or few requests | The LLM failed on a seed; check the log for `FAILED` / `retrying` and `llm_diagnostics` |
+| Model truncated (`finish_reason=length`) | A reasoning model used up its tokens; see section 7.5 |
+| `ModuleNotFoundError: lxml` (or openai, dotenv, ...) | `pip install lxml openai python-dotenv` (see section 6) |
+| `Cannot find module 'docx'` | `npm install -g docx` (only affects the Word report) |
+| Warning about "automatic function calling (AFC)" | Harmless, from the Gemini SDK |
 
 ---
 
-## 14. Tài liệu tham khảo phương pháp
+## 14. Methodological References
 
 - Martin & Xie (2007), *A fault model and mutation testing of access control policies*.
-- Bertolino et al. (2010/2012), XACMUT và X-CREATE — sinh test và mutation cho XACML.
-- Xu et al., tiêu chí rule-pair coverage.
+- Bertolino et al. (2010/2012), XACMUT and X-CREATE — test generation and mutation for XACML.
+- Xu et al., the rule-pair coverage criterion.
